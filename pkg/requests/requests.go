@@ -3,12 +3,12 @@ package requests
 type Request struct {
 	ID             string  `gorm:"type:char(40);primaryKey"`
 	ResidentID     string  `gorm:"column:id_resident;type:char(40);not null"`
-	HouseID        string  `gorm:"column:id_house;type:char(40);not null"`
+	HouseID        int     `gorm:"column:id_house;type:bigint;not null"`
 	RequestType    string  `gorm:"column:type;type:request_type;not null"`
 	Complaint      string  `gorm:"type:text;not null"`
 	Cost           float64 `gorm:"type:numeric(10,2)"`
 	Status         string  `gorm:"type:request_status;default:'создана'"`
-	ResponsibleID  string  `gorm:"column:id_responsible;type:char(40)"`
+	ResponsibleID  int     `gorm:"column:id_responsible;type:bigint"`
 	OrganizationID string  `gorm:"column:id_organization;type:char(40);not null"`
 }
 

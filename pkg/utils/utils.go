@@ -21,13 +21,13 @@ func CheckPassword(hashedPassword, password string) bool {
 	return err == nil
 }
 
-func GenerateID() string {
+func GenerateID() (string, error) {
 	bytes := make([]byte, 20)
 	_, err := rand.Read(bytes)
 	if err != nil {
-		return ""
+		return "", err
 	}
-	return hex.EncodeToString(bytes)
+	return hex.EncodeToString(bytes), nil
 }
 
 //func WriteJSON(w http.ResponseWriter, status int, data interface{}) {

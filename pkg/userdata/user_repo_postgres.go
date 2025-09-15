@@ -1,8 +1,8 @@
 package userdata
 
 import (
-	"DBPrototyping/pkg/employees"
 	"DBPrototyping/pkg/residents"
+	"DBPrototyping/pkg/staffdata"
 	"DBPrototyping/pkg/utils"
 	"errors"
 	"github.com/dgrijalva/jwt-go"
@@ -51,6 +51,7 @@ func (repo *UserRepoPg) Authorize(login, password string) (*User, error) {
 	return &user, nil
 }
 
+// TODO в хэндлере замутить проверку количества символов
 func (repo *UserRepoPg) Register(phone, password string) (*User, error) {
 	exists, err := repo.checkUserExists(phone)
 	if err != nil {
@@ -85,12 +86,14 @@ func (repo *UserRepoPg) Register(phone, password string) (*User, error) {
 
 func (repo *UserRepoPg) checkUserExists(phone string) (bool, error) {
 	var user UserPg
+
 	if err := repo.db.Where("phone = ?", phone).First(user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil
 		}
 		return false, err
 	}
+
 	return true, nil
 }
 
@@ -98,15 +101,18 @@ func (repo *UserRepoPg) isStaffMember(user *User) (bool, error) {
 	if user == nil || user.Phone == "" {
 		return false, nil
 	}
-	var staffMember employees.StaffMemberPg
+
+	var staffMember staffdata.StaffMemberPg
 	if err := repo.db.Where("phone = ?", user.Phone).First(&staffMember).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			repo.logger.Debugf("staff member not found: %s", user.Phone)
 			return false, nil
 		}
+
 		repo.logger.Errorf("failed to find staff member: %s", err.Error())
 		return false, err
 	}
+
 	repo.logger.Debugf("Successfully found staff member: %s", staffMember.Phone)
 	return true, nil
 }
@@ -115,15 +121,18 @@ func (repo *UserRepoPg) isResident(user *User) (bool, error) {
 	if user == nil || user.Phone == "" {
 		return false, nil
 	}
+
 	var resident residents.ResidentPg
 	if err := repo.db.Where("phone = ?", user.Phone).First(&resident).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			repo.logger.Debugf("resident not found: %s", user.Phone)
 			return false, nil
 		}
+
 		repo.logger.Errorf("failed to find resident: %s", err.Error())
 		return false, err
 	}
+
 	repo.logger.Debugf("Successfully found resident: %s", resident.Phone)
 	return true, nil
 }

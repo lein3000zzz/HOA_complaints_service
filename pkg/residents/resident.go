@@ -8,7 +8,7 @@ type Resident struct {
 }
 
 type House struct {
-	ID        string     `gorm:"type:char(40);primaryKey"`
+	ID        int        `gorm:"type:bigint;primaryKey"`
 	Address   string     `gorm:"column:address;not null"`
 	Residents []Resident `gorm:"many2many:resident_houses;"`
 }

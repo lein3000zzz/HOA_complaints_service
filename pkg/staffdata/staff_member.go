@@ -1,12 +1,11 @@
-package employees
+package staffdata
 
 type StaffMember struct {
-	ID       int               `gorm:"type:bigint;primaryKey"`
-	FullName string            `gorm:"not null"`
-	Phone    string            `gorm:"not null;unique"`
-	Status   StaffMemberStatus `gorm:"not null"`
-
-	Specializations []Specialization `gorm:"many2many:employee_specializations;"`
+	ID              int                         `gorm:"type:bigint;primaryKey"`
+	FullName        string                      `gorm:"not null"`
+	Phone           string                      `gorm:"not null;unique"`
+	Status          StaffMemberStatus           `gorm:"not null"`
+	Specializations []StaffMemberSpecialization `gorm:"foreignKey:MemberID;references:ID"`
 }
 
 type Specialization struct {
@@ -17,15 +16,15 @@ type Specialization struct {
 }
 
 type StaffMemberSpecialization struct {
-	EmployeeID       string `gorm:"type:bigint;primaryKey"`
-	SpecializationID string `gorm:"type:char(40);primaryKey"`
+	MemberID         int    `gorm:"column:id_member;type:bigint;primaryKey"`
+	SpecializationID string `gorm:"column:id_specialization;type:char(40);primaryKey"`
 	IsActive         bool   `gorm:"not null;default:true"`
 
-	Employee       StaffMember    `gorm:"foreignKey:EmployeeID;references:ID"`
+	Employee       StaffMember    `gorm:"foreignKey:MemberID;references:ID"`
 	Specialization Specialization `gorm:"foreignKey:SpecializationID;references:ID"`
 }
 
-type StaffMemberRepo interface {
+type StaffRepo interface {
 	ChangeStaffMemberStatus(id string, status string) error
 }
 
