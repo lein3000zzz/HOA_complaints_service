@@ -25,7 +25,10 @@ type StaffMemberSpecialization struct {
 }
 
 type StaffRepo interface {
-	ChangeStaffMemberStatus(id string, status string) error
+	RegisterNewMember(phone, fullName string) (*StaffMember, error)
+	AddStaffMemberSpecializationAssoc(staffMemberID int, specializationID string) error
+	RegisterNewSpecialization(jobTitle string) (*Specialization, error)
+	IsStaffMember(phoneNumber string) (bool, error)
 }
 
 type StaffMemberStatus string

@@ -1,15 +1,11 @@
 package userdata
 
 import (
-	"DBPrototyping/pkg/residence"
-	"DBPrototyping/pkg/staffdata"
 	"DBPrototyping/pkg/utils"
 	"context"
 	"errors"
-	"strconv"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -97,85 +93,85 @@ func (repo *UserRepoPg) Register(phone, password string) (*User, error) {
 	return &user, nil
 }
 
-func (repo *UserRepoPg) checkUserExists(phone string) (bool, error) {
-	var user UserPg
+//func (repo *UserRepoPg) checkUserExists(phone string) (bool, error) {
+//	var user UserPg
+//
+//	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+//	defer cancel()
+//
+//	if err := repo.db.WithContext(ctx).Where("phone = ?", phone).First(user).Error; err != nil {
+//		if errors.Is(err, gorm.ErrRecordNotFound) {
+//			return false, nil
+//		}
+//		return false, err
+//	}
+//
+//	return true, nil
+//}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+//func (repo *UserRepoPg) isStaffMember(user *User) (bool, error) {
+//	if user == nil || user.Phone == "" {
+//		return false, nil
+//	}
+//
+//	var staffMember staffdata.StaffMemberPg
+//
+//	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+//	defer cancel()
+//
+//	if err := repo.db.WithContext(ctx).Where("phone = ?", user.Phone).First(&staffMember).Error; err != nil {
+//		if errors.Is(err, gorm.ErrRecordNotFound) {
+//			repo.logger.Debugf("staff member not found: %s", user.Phone)
+//			return false, nil
+//		}
+//
+//		repo.logger.Errorf("failed to find staff member: %s", err.Error())
+//		return false, err
+//	}
+//
+//	repo.logger.Debugf("Successfully found staff member: %s", staffMember.Phone)
+//	return true, nil
+//}
 
-	if err := repo.db.WithContext(ctx).Where("phone = ?", phone).First(user).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, nil
-		}
-		return false, err
-	}
+//func (repo *UserRepoPg) isResident(user *User) (bool, error) {
+//	if user == nil || user.Phone == "" {
+//		return false, nil
+//	}
+//
+//	var resident residence.ResidentPg
+//
+//	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+//	defer cancel()
+//
+//	if err := repo.db.WithContext(ctx).Where("phone = ?", user.Phone).First(&resident).Error; err != nil {
+//		if errors.Is(err, gorm.ErrRecordNotFound) {
+//			repo.logger.Debugf("resident not found: %s", user.Phone)
+//			return false, nil
+//		}
+//
+//		repo.logger.Errorf("failed to find resident: %s", err.Error())
+//		return false, err
+//	}
+//
+//	repo.logger.Debugf("Successfully found resident: %s", resident.Phone)
+//	return true, nil
+//}
 
-	return true, nil
-}
-
-func (repo *UserRepoPg) isStaffMember(user *User) (bool, error) {
-	if user == nil || user.Phone == "" {
-		return false, nil
-	}
-
-	var staffMember staffdata.StaffMemberPg
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	if err := repo.db.WithContext(ctx).Where("phone = ?", user.Phone).First(&staffMember).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			repo.logger.Debugf("staff member not found: %s", user.Phone)
-			return false, nil
-		}
-
-		repo.logger.Errorf("failed to find staff member: %s", err.Error())
-		return false, err
-	}
-
-	repo.logger.Debugf("Successfully found staff member: %s", staffMember.Phone)
-	return true, nil
-}
-
-func (repo *UserRepoPg) isResident(user *User) (bool, error) {
-	if user == nil || user.Phone == "" {
-		return false, nil
-	}
-
-	var resident residence.ResidentPg
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	if err := repo.db.WithContext(ctx).Where("phone = ?", user.Phone).First(&resident).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			repo.logger.Debugf("resident not found: %s", user.Phone)
-			return false, nil
-		}
-
-		repo.logger.Errorf("failed to find resident: %s", err.Error())
-		return false, err
-	}
-
-	repo.logger.Debugf("Successfully found resident: %s", resident.Phone)
-	return true, nil
-}
-
-func (repo *UserRepoPg) GenerateUserToken(u *User) (*jwt.Token, error) {
-	isStaffMember, errStaffMember := repo.isStaffMember(u)
-	isResident, errResident := repo.isResident(u)
-
-	if errStaffMember != nil || errResident != nil {
-		repo.logger.Errorf("Staff member not found for user: %s", u.Phone)
-		return nil, errStaffMember
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"phone_number":  u.Phone,
-		"isStaffMember": strconv.FormatBool(isStaffMember),
-		"isResident":    strconv.FormatBool(isResident),
-	})
-	// "exp": time.Now().Add(1 * time.Hour).Unix(),
-	repo.logger.Debugf("Successfully generate user token for user: %s", u.Phone)
-	return token, nil
-}
+//func (repo *UserRepoPg) GenerateUserToken(user *User) (*jwt.Token, error) {
+//	isStaffMember, errStaffMember := repo.isStaffMember(user)
+//	isResident, errResident := repo.isResident(user)
+//
+//	if errStaffMember != nil || errResident != nil {
+//		repo.logger.Errorf("Staff member not found for user: %s", user.Phone)
+//		return nil, errStaffMember
+//	}
+//
+//	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+//		"phone_number":  user.Phone,
+//		"isStaffMember": strconv.FormatBool(isStaffMember),
+//		"isResident":    strconv.FormatBool(isResident),
+//	})
+//	// "exp": time.Now().Add(1 * time.Hour).Unix(),
+//	repo.logger.Debugf("Successfully generate user token for user: %s", user.Phone)
+//	return token, nil
+//}

@@ -3,6 +3,7 @@ package utils
 import (
 	"crypto/rand"
 	"encoding/hex"
+
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -30,41 +31,22 @@ func GenerateID() (string, error) {
 	return hex.EncodeToString(bytes), nil
 }
 
-//func WriteJSON(w http.ResponseWriter, status int, data interface{}) {
-//	w.Header().Set("Content-Type", "application/json")
-//	w.WriteHeader(status)
-//	out, err := json.Marshal(data)
-//	if err != nil {
-//		return
-//	}
-//	_, err = w.Write(out)
-//	if err != nil {
-//		return
-//	}
-//}
+func IsNumbers(s string) bool {
+	for i := range len(s) {
+		if !(s[i] >= '0' && s[i] <= '9') {
+			return false
+		}
+	}
+	return true
+}
 
-//func SendJwtToken(w http.ResponseWriter, token *jwt.Token) error {
-//	tokenString, err := token.SignedString(jwtSecret)
-//	if err != nil {
-//		WriteJSON(w, http.StatusInternalServerError, map[string]interface{}{"error": err.Error()})
-//		return err
-//	}
-//
-//	fmt.Println("SendJwtToken token:", tokenString)
-//
-//	WriteJSON(w, http.StatusOK, map[string]interface{}{
-//		"token": tokenString,
-//	})
-//	return nil
-//}
-
-//func IsNumbersAndLetters(s string) bool {
-//	for i := range len(s) {
-//		if !((s[i] >= 'a' && s[i] <= 'z') ||
-//			(s[i] >= 'A' && s[i] <= 'Z') ||
-//			(s[i] >= '0' && s[i] <= '9')) {
-//			return false
-//		}
-//	}
-//	return true
-//}
+func IsNumbersAndLetters(s string) bool {
+	for i := range len(s) {
+		if !((s[i] >= 'a' && s[i] <= 'z') ||
+			(s[i] >= 'A' && s[i] <= 'Z') ||
+			(s[i] >= '0' && s[i] <= '9')) {
+			return false
+		}
+	}
+	return true
+}

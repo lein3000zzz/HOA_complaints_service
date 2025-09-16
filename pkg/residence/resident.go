@@ -19,5 +19,8 @@ type ResidentHouse struct {
 }
 
 type ResidentsController interface {
-	BibaBoba()
+	RegisterNewResident(phone, fullName string) (*Resident, error)
+	RegisterNewHouse(address string) (*House, error)
+	AddResidentAddressAssoc(residentID string, houseID int) error
+	IsResident(phoneNumber string) (bool, error)
 }

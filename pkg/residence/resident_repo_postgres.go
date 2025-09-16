@@ -131,3 +131,23 @@ func (repo *ResidentPgRepo) AddResidentAddressAssoc(residentID string, houseID i
 	repo.logger.Infof("assigned house %d to resident %s", houseID, residentID)
 	return nil
 }
+
+func (repo *ResidentPgRepo) IsResident(phoneNumber string) (bool, error) {
+	var resident ResidentPg
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := repo.db.WithContext(ctx).Where("phone = ?", phoneNumber).First(&resident).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			repo.logger.Debugf("resident not found: %s", phoneNumber)
+			return false, nil
+		}
+
+		repo.logger.Errorf("failed to find resident: %s", err.Error())
+		return false, err
+	}
+
+	repo.logger.Debugf("Successfully found resident: %s", phoneNumber)
+	return true, nil
+}
