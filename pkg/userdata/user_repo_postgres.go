@@ -1,19 +1,24 @@
 package userdata
 
 import (
-	"DBPrototyping/pkg/residents"
+	"DBPrototyping/pkg/residence"
 	"DBPrototyping/pkg/staffdata"
 	"DBPrototyping/pkg/utils"
+	"context"
 	"errors"
+	"strconv"
+	"time"
+
 	"github.com/dgrijalva/jwt-go"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
-	"strconv"
+	"gorm.io/gorm/clause"
 )
 
 var (
 	ErrUserNotFound = errors.New("user not found")
 	ErrUserExists   = errors.New("user already exists")
+	ErrCreatingUser = errors.New("error creating a new user")
 )
 
 type UserRepoPg struct {
@@ -22,6 +27,10 @@ type UserRepoPg struct {
 }
 
 type UserPg User
+
+func (UserPg) TableName() string {
+	return "login_credentials"
+}
 
 func NewUserRepoPg(db *gorm.DB, logger *zap.SugaredLogger) *UserRepoPg {
 	return &UserRepoPg{
@@ -32,11 +41,16 @@ func NewUserRepoPg(db *gorm.DB, logger *zap.SugaredLogger) *UserRepoPg {
 
 func (repo *UserRepoPg) Authorize(login, password string) (*User, error) {
 	var userPg UserPg
-	if err := repo.db.Where("phone = ?", login).First(&userPg).Error; err != nil {
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := repo.db.WithContext(ctx).Where("phone = ?", login).First(&userPg).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			repo.logger.Debugf("User %s not found", login)
 			return nil, ErrUserNotFound
 		}
+
 		repo.logger.Debugf("User %s not found, err, %v", login, err)
 		return nil, err
 	}
@@ -53,21 +67,10 @@ func (repo *UserRepoPg) Authorize(login, password string) (*User, error) {
 
 // TODO в хэндлере замутить проверку количества символов
 func (repo *UserRepoPg) Register(phone, password string) (*User, error) {
-	exists, err := repo.checkUserExists(phone)
-	if err != nil {
-		repo.logger.Errorf("checkUserExists error: %s", err.Error())
-		return nil, err
-	}
-
-	if exists {
-		repo.logger.Debugf("user %s already exists", phone)
-		return nil, ErrUserExists
-	}
-
 	passwordHash, errHashing := utils.HashPassword(password)
 
 	if errHashing != nil {
-		repo.logger.Errorf("hashing error: %s", errHashing.Error())
+		repo.logger.Debugf("Error hashing password: %v", errHashing)
 		return nil, errHashing
 	}
 
@@ -76,9 +79,19 @@ func (repo *UserRepoPg) Register(phone, password string) (*User, error) {
 		PasswordHash: passwordHash,
 	}
 
-	repo.db.Create(&userPg)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	repo.logger.Debugf("Successfully created user: %s", userPg.Phone)
+	upsertRes := repo.db.WithContext(ctx).Clauses(clause.OnConflict{DoNothing: true}).Create(&userPg)
+
+	if upsertRes.Error != nil {
+		return nil, upsertRes.Error
+	}
+	if upsertRes.RowsAffected != 1 {
+		repo.logger.Warnf("failed to insert new user %v", userPg)
+		return nil, ErrUserExists
+	}
+
 	user := User(userPg)
 
 	return &user, nil
@@ -87,7 +100,10 @@ func (repo *UserRepoPg) Register(phone, password string) (*User, error) {
 func (repo *UserRepoPg) checkUserExists(phone string) (bool, error) {
 	var user UserPg
 
-	if err := repo.db.Where("phone = ?", phone).First(user).Error; err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := repo.db.WithContext(ctx).Where("phone = ?", phone).First(user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil
 		}
@@ -103,7 +119,11 @@ func (repo *UserRepoPg) isStaffMember(user *User) (bool, error) {
 	}
 
 	var staffMember staffdata.StaffMemberPg
-	if err := repo.db.Where("phone = ?", user.Phone).First(&staffMember).Error; err != nil {
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := repo.db.WithContext(ctx).Where("phone = ?", user.Phone).First(&staffMember).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			repo.logger.Debugf("staff member not found: %s", user.Phone)
 			return false, nil
@@ -122,8 +142,12 @@ func (repo *UserRepoPg) isResident(user *User) (bool, error) {
 		return false, nil
 	}
 
-	var resident residents.ResidentPg
-	if err := repo.db.Where("phone = ?", user.Phone).First(&resident).Error; err != nil {
+	var resident residence.ResidentPg
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := repo.db.WithContext(ctx).Where("phone = ?", user.Phone).First(&resident).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			repo.logger.Debugf("resident not found: %s", user.Phone)
 			return false, nil

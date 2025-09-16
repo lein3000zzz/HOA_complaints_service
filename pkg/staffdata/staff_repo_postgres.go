@@ -2,12 +2,15 @@ package staffdata
 
 import (
 	"DBPrototyping/pkg/utils"
+	"context"
 	"errors"
+	"os"
+	"strconv"
+	"time"
+
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"os"
-	"strconv"
 )
 
 var (
@@ -19,6 +22,18 @@ type StaffMemberPg StaffMember
 
 func (StaffMemberPg) TableName() string {
 	return "staff_members"
+}
+
+type SpecializationPg Specialization
+
+func (SpecializationPg) TableName() string {
+	return "specializations"
+}
+
+type StaffMemberSpecializationPg StaffMemberSpecialization
+
+func (StaffMemberSpecializationPg) TableName() string {
+	return "staff_member_specialization"
 }
 
 type StaffRepoPostgres struct {
@@ -33,55 +48,90 @@ func NewStaffRepoPostgres(logger *zap.SugaredLogger, db *gorm.DB) *StaffRepoPost
 	}
 }
 
-func (repo *StaffRepoPostgres) RegisterNewSpecialization(jobTitle string) (string, error) {
+func (repo *StaffRepoPostgres) RegisterNewSpecialization(jobTitle string) (*Specialization, error) {
 	retryFactor := os.Getenv("RETRY_FACTOR")
 	retries, errConversion := strconv.Atoi(retryFactor)
 	if errConversion != nil || retries <= 0 {
 		retries = 1
 	}
 
-	spec := Specialization{
+	specPg := SpecializationPg{
 		Title: jobTitle,
 	}
 
-	for i := 0; i < retries; i++ {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	createdFlag := false
+	for i := 0; i < retries && !createdFlag; i++ {
 		jobID, err := utils.GenerateID()
 		if err != nil {
 			repo.logger.Warnf("failed to generate specialization ID, %v", err)
 			continue
 		}
 
-		spec.ID = jobID
+		specPg.ID = jobID
 
-		upsertRes := repo.db.Clauses(clause.OnConflict{DoNothing: true}).Create(&spec)
-		if upsertRes.Error != nil {
-			return "", upsertRes.Error
+		upsertRes := repo.db.WithContext(ctx).Clauses(clause.OnConflict{DoNothing: true}).Create(&specPg)
+		if upsertRes.Error != nil || upsertRes.RowsAffected != 1 {
+			continue
 		}
-		if upsertRes.RowsAffected == 1 {
-			return spec.ID, nil
-		}
+		createdFlag = true
 	}
 
-	return "", ErrCreatingSpecialization
+	if !createdFlag {
+		return nil, ErrCreatingSpecialization
+	}
+
+	spec := Specialization(specPg)
+
+	return &spec, nil
 }
 
 // TODO на хэндлере проверять количество символов в номере
-func (repo *StaffRepoPostgres) RegisterNewMember(phone, fullName string) error {
-	newMember := StaffMemberPg{
+func (repo *StaffRepoPostgres) RegisterNewMember(phone, fullName string) (*StaffMember, error) {
+	newMemberPg := StaffMemberPg{
 		Phone:    phone,
 		FullName: fullName,
 		Status:   StatusActive,
 	}
 
-	upsertRes := repo.db.Clauses(clause.OnConflict{DoNothing: true}).Create(&newMember)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	upsertRes := repo.db.WithContext(ctx).Clauses(clause.OnConflict{DoNothing: true}).Create(&newMemberPg)
 
 	if upsertRes.Error != nil {
-		return upsertRes.Error
+		return nil, upsertRes.Error
 	}
 	if upsertRes.RowsAffected != 1 {
-		repo.logger.Warnf("failed to insert new staff member %v", newMember)
-		return ErrCreatingMember
+		repo.logger.Warnf("failed to insert new staff member %v", newMemberPg)
+		return nil, ErrCreatingMember
 	}
 
+	newMember := StaffMember(newMemberPg)
+
+	return &newMember, nil
+}
+
+func (repo *StaffRepoPostgres) AddStaffMemberSpecializationAssoc(staffMemberID int, specializationID string) error {
+	mapping := StaffMemberSpecializationPg{
+		MemberID:         staffMemberID,
+		SpecializationID: specializationID,
+		IsActive:         true,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := repo.db.WithContext(ctx).
+		Table(StaffMemberSpecializationPg{}.TableName()).
+		Clauses(clause.OnConflict{DoNothing: true}).
+		Create(&mapping).Error; err != nil {
+		repo.logger.Errorf("failed to create staff-spec mapping staffMemberID=%d spec=%s: %v", staffMemberID, specializationID, err)
+		return err
+	}
+
+	repo.logger.Infof("assigned member %d to spec %s", staffMemberID, specializationID)
 	return nil
 }

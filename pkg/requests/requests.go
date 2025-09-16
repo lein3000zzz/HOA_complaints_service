@@ -1,29 +1,35 @@
 package requests
 
 type Request struct {
-	ID             string  `gorm:"type:char(40);primaryKey"`
-	ResidentID     string  `gorm:"column:id_resident;type:char(40);not null"`
-	HouseID        int     `gorm:"column:id_house;type:bigint;not null"`
-	RequestType    string  `gorm:"column:type;type:request_type;not null"`
-	Complaint      string  `gorm:"type:text;not null"`
-	Cost           float64 `gorm:"type:numeric(10,2)"`
-	Status         string  `gorm:"type:request_status;default:'создана'"`
-	ResponsibleID  int     `gorm:"column:id_responsible;type:bigint"`
-	OrganizationID string  `gorm:"column:id_organization;type:char(40);not null"`
+	ID             string        `gorm:"type:char(40);primaryKey"`
+	ResidentID     string        `gorm:"column:id_resident;type:char(40);not null"`
+	HouseID        int           `gorm:"column:id_house;type:bigint;not null"`
+	RequestType    RequestType   `gorm:"column:type;type:request_type;not null"`
+	Complaint      string        `gorm:"type:text;not null"`
+	Cost           *float64      `gorm:"type:numeric(10,2)"`
+	Status         RequestStatus `gorm:"type:request_status;default:'создана'"`
+	ResponsibleID  *int          `gorm:"column:id_responsible;type:bigint"`
+	OrganizationID *string       `gorm:"column:id_organization;type:char(40)"`
+}
+
+type InitialRequestData struct {
+	ResidentID  string
+	HouseID     int
+	RequestType RequestType
+	Complaint   string
 }
 
 type RequestRepo interface {
-	CreateRequest(request Request) error
+	CreateRequest(request InitialRequestData) (Request, error)
 	UpdateRequest(request Request) error
-	ChangeRequestStatus(id string, status string) error
 	SelectResponsible(request Request)
 }
 
 type RequestType string
 
 const (
-	TypeApartmentInternal RequestType = "ремон_внутриквартирный"
-	TypeHouseCommon       RequestType = "ремонт_общедомового_ищущества"
+	TypeApartmentInternal RequestType = "ремонт_внутриквартирный"
+	TypeHouseCommon       RequestType = "ремонт_общедомового_имущества"
 )
 
 func (s RequestType) IsValid() bool {

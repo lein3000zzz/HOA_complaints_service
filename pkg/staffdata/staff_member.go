@@ -3,14 +3,14 @@ package staffdata
 type StaffMember struct {
 	ID              int                         `gorm:"type:bigint;primaryKey"`
 	FullName        string                      `gorm:"not null"`
-	Phone           string                      `gorm:"not null;unique"`
+	Phone           string                      `gorm:"column:phone_number;not null;unique"`
 	Status          StaffMemberStatus           `gorm:"not null"`
 	Specializations []StaffMemberSpecialization `gorm:"foreignKey:MemberID;references:ID"`
 }
 
 type Specialization struct {
 	ID    string `gorm:"type:char(40);primaryKey"`
-	Title string `gorm:"not null"`
+	Title string `gorm:"column:name;not null"`
 
 	Employees []StaffMemberSpecialization `gorm:"foreignKey:SpecializationID"`
 }
@@ -18,7 +18,7 @@ type Specialization struct {
 type StaffMemberSpecialization struct {
 	MemberID         int    `gorm:"column:id_member;type:bigint;primaryKey"`
 	SpecializationID string `gorm:"column:id_specialization;type:char(40);primaryKey"`
-	IsActive         bool   `gorm:"not null;default:true"`
+	IsActive         bool   `gorm:"column:is_active;not null;default:true"`
 
 	Employee       StaffMember    `gorm:"foreignKey:MemberID;references:ID"`
 	Specialization Specialization `gorm:"foreignKey:SpecializationID;references:ID"`
