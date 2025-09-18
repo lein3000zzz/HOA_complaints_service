@@ -1,0 +1,42 @@
+{{define "register.tmpl"}}{{template "userFormMain" .}}{{end}}
+{{/*{{define "content"}}*/}}
+{{define "register.content"}}
+<section class="card">
+  <h1 class="card-title">Register</h1>
+{{/*    Я обязательно не забуду сделать правильные эндпоинты*/}}
+  <form id="register-form" class="form" data-endpoint="/api/staff/register">
+    <div class="form-row">
+      <label for="reg-phone">Phone number</label>
+      <input id="reg-phone" name="phoneNumber" type="tel" minlength="5" maxlength="30" required placeholder="7000000000">
+    </div>
+
+    <div class="form-row">
+      <label for="reg-fullname">Full name</label>
+      <input id="reg-fullname" name="fullName" type="text" maxlength="100" placeholder="John Doe">
+    </div>
+
+    <div class="form-row">
+      <label for="reg-password">Password</label>
+      <input id="reg-password" name="password" type="password" minlength="5" maxlength="30" required placeholder="Create a password">
+    </div>
+
+    <fieldset class="form-row inline">
+      <legend>Roles</legend>
+      <label class="check">
+        <input type="checkbox" name="isResident">
+        <span>Resident</span>
+      </label>
+      <label class="check">
+        <input type="checkbox" name="isStaffMember">
+        <span>Staff member</span>
+      </label>
+    </fieldset>
+
+    <div class="form-row">
+      <button type="submit" class="btn">Create account</button>
+    </div>
+
+    <output id="register-output" class="form-output" aria-live="polite"></output>
+  </form>
+</section>
+{{end}}

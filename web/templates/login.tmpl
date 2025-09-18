@@ -1,0 +1,25 @@
+{{define "login.tmpl"}}{{template "userFormMain" .}}{{end}}
+
+{{/*{{define "content"}}*/}}
+{{define "login.content"}}
+<section class="card">
+  <h1 class="card-title">Login</h1>
+  <form id="login-form" class="form" data-endpoint="/api/login">
+    <div class="form-row">
+      <label for="login-phone">Phone number</label>
+      <input id="login-phone" name="phoneNumber" type="tel" minlength="5" maxlength="30" required placeholder="7000000000">
+    </div>
+
+    <div class="form-row">
+      <label for="login-password">Password</label>
+      <input id="login-password" name="password" type="password" minlength="5" maxlength="30" required placeholder="Your password">
+    </div>
+
+    <div class="form-row">
+      <button type="submit" class="btn">Sign in</button>
+    </div>
+
+    <output id="login-output" class="form-output" aria-live="polite"></output>
+  </form>
+</section>
+{{end}}

@@ -41,7 +41,7 @@ func (repo *UserRepoPg) Authorize(login, password string) (*User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	if err := repo.db.WithContext(ctx).Where("phone = ?", login).First(&userPg).Error; err != nil {
+	if err := repo.db.WithContext(ctx).Where("phone_number = ?", login).First(&userPg).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			repo.logger.Debugf("User %s not found", login)
 			return nil, ErrUserNotFound
@@ -51,7 +51,7 @@ func (repo *UserRepoPg) Authorize(login, password string) (*User, error) {
 		return nil, err
 	}
 
-	if ok := utils.CheckPassword(password, userPg.PasswordHash); !ok {
+	if ok := utils.CheckPassword(userPg.PasswordHash, password); !ok {
 		repo.logger.Debugf("User %s password not match", login)
 		return nil, ErrUserNotFound
 	}

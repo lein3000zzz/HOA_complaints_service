@@ -1,0 +1,39 @@
+{{define "userFormMain"}}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{.title}} - HOA</title>
+  <link href="/static/css/styles.css" rel="stylesheet">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <a class="brand" href="/">HOA</a>
+      <nav class="nav">
+        <a href="/login">Login</a>
+        <a href="/staff/register">register</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+
+      {{if eq .content "login.content"}}
+          {{template "login.content" .}}
+      {{else if eq .content "register.content"}}
+          {{template "register.content" .}}
+      {{end}}
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <small>HOA demo</small>
+    </div>
+  </footer>
+
+  <script src="/static/js/auth.js"></script>
+</body>
+</html>
+{{end}}

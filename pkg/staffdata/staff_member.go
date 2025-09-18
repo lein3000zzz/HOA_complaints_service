@@ -2,15 +2,15 @@ package staffdata
 
 type StaffMember struct {
 	ID              int                         `gorm:"type:bigint;primaryKey"`
-	FullName        string                      `gorm:"not null"`
-	Phone           string                      `gorm:"column:phone_number;not null;unique"`
+	FullName        string                      `gorm:"type:varchar(40);not null"`
+	Phone           string                      `gorm:"type:varchar(40);column:phone_number;not null;unique"`
 	Status          StaffMemberStatus           `gorm:"not null"`
 	Specializations []StaffMemberSpecialization `gorm:"foreignKey:MemberID;references:ID"`
 }
 
 type Specialization struct {
 	ID    string `gorm:"type:char(40);primaryKey"`
-	Title string `gorm:"column:name;not null"`
+	Title string `gorm:"type:varchar(40);column:name;not null"`
 
 	Employees []StaffMemberSpecialization `gorm:"foreignKey:SpecializationID"`
 }

@@ -1,8 +1,8 @@
 package userdata
 
 type User struct {
-	Phone        string `gorm:"column:phone_number;primaryKey"`
-	PasswordHash string `gorm:"column:password_hash;type:varchar;not null"`
+	Phone        string `gorm:"type:varchar(40);column:phone_number;primaryKey"`
+	PasswordHash string `gorm:"type:varchar;column:password_hash;type:varchar;not null"`
 }
 
 type UserRepo interface {

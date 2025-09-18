@@ -1,9 +1,6 @@
 package session
 
 import (
-	"net/http"
-
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,25 +11,15 @@ const (
 	ResidentRole Role = "resident"
 )
 
-func RequireRoles(allowed ...Role) gin.HandlerFunc {
-	acl := make(map[Role]struct{}, len(allowed))
-	for _, role := range allowed {
-		acl[role] = struct{}{}
-	}
+const (
+	sessKeyRole  string = "role"
+	sessKeyPhone string = "phoneNumber"
+)
 
-	return func(c *gin.Context) {
-		session := sessions.Default(c)
-		roleValue := session.Get("role")
-		role, ok := roleValue.(Role)
-		if !ok {
-			c.Redirect(http.StatusSeeOther, "/login")
-			c.Abort()
-			return
-		}
-		if _, exists := acl[role]; !exists {
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "forbidden"})
-			return
-		}
-		c.Next()
-	}
+type GinSessionManagerRepo interface {
+	RequireRoles(allowed ...Role) gin.HandlerFunc
+	UserFromSession() gin.HandlerFunc
+	SetUserSessionRole(c *gin.Context, role Role)
+	SetUserSessionPhone(c *gin.Context, phone string)
+	SaveSession(c *gin.Context) error
 }

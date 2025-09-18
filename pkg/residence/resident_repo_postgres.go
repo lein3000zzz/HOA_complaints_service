@@ -138,7 +138,7 @@ func (repo *ResidentPgRepo) IsResident(phoneNumber string) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	if err := repo.db.WithContext(ctx).Where("phone = ?", phoneNumber).First(&resident).Error; err != nil {
+	if err := repo.db.WithContext(ctx).Where("phone_number = ?", phoneNumber).First(&resident).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			repo.logger.Debugf("resident not found: %s", phoneNumber)
 			return false, nil
