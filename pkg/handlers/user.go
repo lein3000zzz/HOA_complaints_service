@@ -181,3 +181,15 @@ func (h *UserHandler) Login() func(c *gin.Context) {
 		return
 	}
 }
+
+func (h *UserHandler) Logout() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		h.SessionManager.ClearSession(c)
+		err := h.SessionManager.SaveSession(c)
+		if err != nil {
+			h.Logger.Errorf("save session error: %s", err.Error())
+			c.AbortWithStatusJSON(http.StatusInternalServerError, err.Error())
+		}
+		c.Redirect(http.StatusSeeOther, "/login")
+	}
+}

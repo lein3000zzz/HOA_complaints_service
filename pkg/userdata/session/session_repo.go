@@ -20,11 +20,10 @@ func (sm *GinSessionManager) RequireRoles(allowed ...Role) gin.HandlerFunc {
 	}
 
 	return func(c *gin.Context) {
-		session := sessions.Default(c)
-		roleValue := session.Get(sessKeyRole)
+		roleValue, exists := c.Get(sessKeyRole)
 		role, ok := roleValue.(string)
 
-		if !ok {
+		if !exists || !ok {
 			c.Redirect(http.StatusSeeOther, "/login")
 			c.Abort()
 			sm.Logger.Infof("no such role detected: %s", role)
@@ -52,7 +51,7 @@ func (sm *GinSessionManager) UserFromSession() gin.HandlerFunc {
 
 		if sessPhoneVal := sess.Get("phoneNumber"); sessPhoneVal != nil {
 			if phone, ok := sessPhoneVal.(string); ok && phone != "" {
-				c.Set("currentUserPhone", phone)
+				c.Set("phoneNumber", phone)
 			}
 		}
 
@@ -92,4 +91,9 @@ func (sm *GinSessionManager) SaveSession(c *gin.Context) error {
 		return fmt.Errorf("failed to save session: %w", err)
 	}
 	return nil
+}
+
+func (sm *GinSessionManager) ClearSession(c *gin.Context) {
+	userSession := sessions.Default(c)
+	userSession.Clear()
 }

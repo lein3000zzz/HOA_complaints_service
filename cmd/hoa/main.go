@@ -142,11 +142,13 @@ func main() {
 	//}
 	//log.Fatal("Successfully registered")
 
+	r.Use(sm.UserFromSession())
+
 	staffApiGroup := api.Group("/staff")
-	staffApiGroup.Use(sm.RequireRoles(session.StaffRole))
+	staffApiGroup.Use(sm.UserFromSession(), sm.RequireRoles(session.StaffRole))
 
 	staffGroup := r.Group("/staff")
-	staffGroup.Use(sm.RequireRoles(session.StaffRole))
+	staffGroup.Use(sm.UserFromSession(), sm.RequireRoles(session.StaffRole))
 
 	r.Static("/static", "./web/static")
 	r.LoadHTMLGlob("web/templates/*.tmpl")
@@ -154,6 +156,7 @@ func main() {
 	api.POST("/login", userHandler.Login())
 	staffApiGroup.POST("/register", userHandler.Register())
 	r.GET("/login", pageH.LoginPage())
+	r.GET("/logout", userHandler.Logout())
 	r.GET("/", pageH.MainPage())
 	staffGroup.GET("/register", pageH.RegisterPage())
 

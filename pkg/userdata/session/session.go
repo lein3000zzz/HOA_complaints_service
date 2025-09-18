@@ -22,4 +22,5 @@ type GinSessionManagerRepo interface {
 	SetUserSessionRole(c *gin.Context, role Role)
 	SetUserSessionPhone(c *gin.Context, phone string)
 	SaveSession(c *gin.Context) error
+	ClearSession(c *gin.Context)
 }

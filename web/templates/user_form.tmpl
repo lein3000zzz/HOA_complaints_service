@@ -11,8 +11,12 @@
     <div class="container">
       <a class="brand" href="/">HOA</a>
       <nav class="nav">
-        <a href="/login">Login</a>
-        <a href="/staff/register">register</a>
+          {{if .phoneNumber}}
+            <span class="muted">Logged in as {{.phoneNumber}}</span>
+            <a href="/logout" class="btn" style="margin-left:8px;">Logout</a>
+          {{else}}
+            <a href="/login">Login</a>
+          {{end}}
       </nav>
     </div>
   </header>
