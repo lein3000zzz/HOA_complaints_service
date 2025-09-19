@@ -33,6 +33,7 @@ func (ResidentHousePg) TableName() string {
 
 var (
 	ErrResidentExists        = errors.New("resident already exists")
+	ErrResidentNotFound      = errors.New("resident not found")
 	ErrHouseExists           = errors.New("house already exists")
 	ErrAddingResidentAddress = errors.New("error adding residential address")
 )
@@ -132,22 +133,25 @@ func (repo *ResidentPgRepo) AddResidentAddressAssoc(residentID string, houseID i
 	return nil
 }
 
-func (repo *ResidentPgRepo) IsResident(phoneNumber string) (bool, error) {
-	var resident ResidentPg
+func (repo *ResidentPgRepo) GetResidentByPhoneNumber(phoneNumber string) (*Resident, error) {
+	var residentPg ResidentPg
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	if err := repo.db.WithContext(ctx).Where("phone_number = ?", phoneNumber).First(&resident).Error; err != nil {
+	if err := repo.db.WithContext(ctx).Where("phone_number = ?", phoneNumber).First(&residentPg).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			repo.logger.Debugf("resident not found: %s", phoneNumber)
-			return false, nil
+			return nil, ErrResidentNotFound
 		}
 
 		repo.logger.Errorf("failed to find resident: %s", err.Error())
-		return false, err
+		return nil, err
 	}
 
 	repo.logger.Debugf("Successfully found resident: %s", phoneNumber)
-	return true, nil
+
+	resident := Resident(residentPg)
+
+	return &resident, nil
 }

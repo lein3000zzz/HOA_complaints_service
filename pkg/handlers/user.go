@@ -129,16 +129,16 @@ func (h *UserHandler) Login() func(c *gin.Context) {
 			return nil
 		}
 
-		isStaff, errStaff := h.StaffRepo.IsStaffMember(userToLogin.Phone)
-		if errStaff != nil {
+		staffMember, errStaff := h.StaffRepo.GetStaffMemberByPhoneNumber(userToLogin.Phone)
+		if errStaff != nil && errors.Is(errStaff, staffdata.ErrStaffMemberNotFound) {
 			errResponseJSON["staffErr"] = errStaff.Error()
-			h.Logger.Errorf("isStaff error: %s", errStaff.Error())
+			h.Logger.Errorf("staffMember error: %s", errStaff.Error())
 
 			c.AbortWithStatusJSON(http.StatusInternalServerError, errResponseJSON)
 			return
 		}
 
-		if isStaff {
+		if staffMember != nil {
 			if err := saveRole(session.StaffRole); err != nil {
 				errResponseJSON["staffSaveErr"] = err.Error()
 				h.Logger.Errorf("save staff role error: %s", err.Error())
@@ -154,16 +154,16 @@ func (h *UserHandler) Login() func(c *gin.Context) {
 			return
 		}
 
-		isResident, errResident := h.ResidentsRepo.IsResident(userToLogin.Phone)
-		if errResident != nil {
+		resident, errResident := h.ResidentsRepo.GetResidentByPhoneNumber(userToLogin.Phone)
+		if errResident != nil && errors.Is(errResident, residence.ErrResidentNotFound) {
 			errResponseJSON["residentErr"] = errResident.Error()
-			h.Logger.Errorf("isResident error: %s", errResident.Error())
+			h.Logger.Errorf("resident error: %s", errResident.Error())
 
 			c.AbortWithStatusJSON(http.StatusInternalServerError, errResponseJSON)
 			return
 		}
 
-		if isResident {
+		if resident != nil {
 			if err := saveRole(session.ResidentRole); err != nil {
 				errResponseJSON["residentSaveErr"] = err.Error()
 				h.Logger.Errorf("save resident error: %s", err.Error())

@@ -15,6 +15,7 @@ import (
 
 var (
 	ErrCreatingSpecialization = errors.New("error creating specialization")
+	ErrStaffMemberNotFound    = errors.New("staff member not found")
 	ErrCreatingMember         = errors.New("error creating a new member")
 )
 
@@ -136,22 +137,23 @@ func (repo *StaffRepoPostgres) AddStaffMemberSpecializationAssoc(staffMemberID i
 	return nil
 }
 
-func (repo *StaffRepoPostgres) IsStaffMember(phoneNumber string) (bool, error) {
-	var staffMember StaffMemberPg
+func (repo *StaffRepoPostgres) GetStaffMemberByPhoneNumber(phoneNumber string) (*StaffMember, error) {
+	var staffMemberPg StaffMemberPg
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	if err := repo.db.WithContext(ctx).Where("phone_number = ?", phoneNumber).First(&staffMember).Error; err != nil {
+	if err := repo.db.WithContext(ctx).Where("phone_number = ?", phoneNumber).First(&staffMemberPg).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			repo.logger.Debugf("staff member not found: %s", phoneNumber)
-			return false, nil
+			return nil, ErrStaffMemberNotFound
 		}
 
 		repo.logger.Errorf("failed to find staff member: %s", err.Error())
-		return false, err
+		return nil, err
 	}
 
-	repo.logger.Debugf("Successfully found staff member: %s", staffMember.Phone)
-	return true, nil
+	repo.logger.Debugf("Successfully found staff member: %s", staffMemberPg.Phone)
+	staffMember := StaffMember(staffMemberPg)
+	return &staffMember, nil
 }

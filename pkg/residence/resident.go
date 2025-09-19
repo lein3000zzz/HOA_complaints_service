@@ -22,5 +22,5 @@ type ResidentsController interface {
 	RegisterNewResident(phone, fullName string) (*Resident, error)
 	RegisterNewHouse(address string) (*House, error)
 	AddResidentAddressAssoc(residentID string, houseID int) error
-	IsResident(phoneNumber string) (bool, error)
+	GetResidentByPhoneNumber(phoneNumber string) (*Resident, error)
 }

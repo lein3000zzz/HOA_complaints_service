@@ -28,7 +28,7 @@ type StaffRepo interface {
 	RegisterNewMember(phone, fullName string) (*StaffMember, error)
 	AddStaffMemberSpecializationAssoc(staffMemberID int, specializationID string) error
 	RegisterNewSpecialization(jobTitle string) (*Specialization, error)
-	IsStaffMember(phoneNumber string) (bool, error)
+	GetStaffMemberByPhoneNumber(phoneNumber string) (*StaffMember, error)
 }
 
 type StaffMemberStatus string
