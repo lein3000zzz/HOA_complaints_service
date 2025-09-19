@@ -14,7 +14,7 @@ type PageHandler struct {
 func (h *PageHandler) MainPage() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		phoneVal, _ := c.Get("phoneNumber")
-		c.HTML(http.StatusOK, "userFormMain", gin.H{
+		c.HTML(http.StatusOK, "main.tmpl", gin.H{
 			"title":       "main",
 			"content":     "",
 			"phoneNumber": phoneVal,

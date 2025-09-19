@@ -20,7 +20,7 @@ type InitialRequestData struct {
 }
 
 type RequestRepo interface {
-	CreateRequest(request InitialRequestData) (Request, error)
+	CreateRequest(requestData InitialRequestData) (*Request, error)
 	UpdateRequest(request Request) error
 	SelectResponsible(request Request)
 }

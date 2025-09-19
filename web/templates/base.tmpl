@@ -1,4 +1,4 @@
-{{define "userFormMain"}}
+{{define "base"}}
 <!doctype html>
 <html lang="en">
 <head>
@@ -23,10 +23,13 @@
 
   <main class="container">
 
+{{/*      {{template "content" .}}*/}}
       {{if eq .content "login.content"}}
           {{template "login.content" .}}
       {{else if eq .content "register.content"}}
           {{template "register.content" .}}
+      {{else }}
+      <h3>Welcome to the club </h3>
       {{end}}
 
   </main>

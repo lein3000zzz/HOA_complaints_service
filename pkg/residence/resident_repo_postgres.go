@@ -155,3 +155,22 @@ func (repo *ResidentPgRepo) GetResidentByPhoneNumber(phoneNumber string) (*Resid
 
 	return &resident, nil
 }
+
+func (repo *ResidentPgRepo) ValidateResidentHouse(residentID string, houseID int) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var residentHousePg ResidentHousePg
+
+	if err := repo.db.WithContext(ctx).Where("id_resident = ?", residentID).Where("id_house = ?", houseID).First(&residentHousePg).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			repo.logger.Debugf("resident and house do not match: %s, %d", residentID, houseID)
+			return false, ErrResidentNotFound
+		}
+
+		repo.logger.Errorf("failed to find resident and/or house id: %s", err.Error())
+		return false, err
+	}
+
+	return true, nil
+}

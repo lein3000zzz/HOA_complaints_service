@@ -55,15 +55,15 @@ func (sm *GinSessionManager) UserFromSession() gin.HandlerFunc {
 			}
 		}
 
-		if sessRoleVal := sess.Get("role"); sessRoleVal != nil {
+		if sessRoleVal := sess.Get(sessKeyRole); sessRoleVal != nil {
 			switch val := sessRoleVal.(type) {
 			case string:
 				if val != "" {
-					c.Set("currentUserRole", val)
+					c.Set(sessKeyRole, val)
 				}
 			default:
 				if s := fmt.Sprintf("%v", val); s != "" {
-					c.Set("currentUserRole", s)
+					c.Set(sessKeyRole, s)
 				}
 			}
 		}
