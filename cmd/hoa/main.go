@@ -151,7 +151,8 @@ func main() {
 	staffGroup.Use(sm.UserFromSession(), sm.RequireRoles(session.StaffRole))
 
 	r.Static("/static", "./web/static")
-	r.LoadHTMLGlob("web/templates/*.tmpl")
+	//r.LoadHTMLGlob("web/templates/*.tmpl")
+	pageH.InitHTML()
 	//r.LoadHTMLGlob("web/static/html/*.html")
 	api.POST("/login", userHandler.Login())
 	staffApiGroup.POST("/register", userHandler.Register())

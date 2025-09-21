@@ -24,19 +24,21 @@
   <main class="container">
 
 {{/*      {{template "content" .}}*/}}
-      {{if eq .content "login.content"}}
-          {{template "login.content" .}}
-      {{else if eq .content "register.content"}}
-          {{template "register.content" .}}
-      {{else }}
-      <h3>Welcome to the club </h3>
-      {{end}}
+{{/*      {{block "content" .}}{{end}}*/}}
+{{/*      {{if eq .content "login.content"}}*/}}
+      {{template "content" .}}
+{{/*          {{template "login.content" .}}*/}}
+{{/*      {{else if eq .content "register.content"}}*/}}
+{{/*          {{template "register.content" .}}*/}}
+{{/*      {{else }}*/}}
+{{/*      <h3>Welcome to the club </h3>*/}}
+{{/*      {{end}}*/}}
 
   </main>
 
   <footer class="site-footer">
     <div class="container">
-      <small>HOA demo</small>
+      <small>HOA complaints service, built with golang + gin</small>
     </div>
   </footer>
 
