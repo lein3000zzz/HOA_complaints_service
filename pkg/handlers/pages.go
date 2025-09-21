@@ -21,6 +21,7 @@ func (h *PageHandler) InitHTML() {
 		"main.tmpl",
 		"register.tmpl",
 		"login.tmpl",
+		"request.tmpl",
 	}
 
 	h.Templates = make(map[string]*template.Template)
@@ -87,5 +88,18 @@ func (h *PageHandler) RegisterPage() gin.HandlerFunc {
 		}
 
 		h.respondWithHTML(c, "register.tmpl", data)
+	}
+}
+
+func (h *PageHandler) RequestPage() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		phoneVal, _ := c.Get("phoneNumber")
+
+		data := gin.H{
+			"title":       "main",
+			"phoneNumber": phoneVal,
+		}
+
+		h.respondWithHTML(c, "request.tmpl", data)
 	}
 }

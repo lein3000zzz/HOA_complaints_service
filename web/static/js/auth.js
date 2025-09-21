@@ -61,4 +61,5 @@
 
     handleSubmit("login-form", "login-output");
     handleSubmit("register-form", "register-output");
+    handleSubmit("request-form", "request-output");
 })();

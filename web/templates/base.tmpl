@@ -12,8 +12,9 @@
       <a class="brand" href="/">HOA</a>
       <nav class="nav">
           {{if .phoneNumber}}
-            <span class="muted">Logged in as {{.phoneNumber}}</span>
-            <a href="/logout" class="btn" style="margin-left:8px;">Logout</a>
+              <span class="muted">Logged in as <b>{{.phoneNumber}}</b></span>
+              <a href="/resident/create-request" class="btn" style="margin-left:8px;">Create request</a>
+              <a href="/logout" class="btn" style="margin-left:8px;">Logout</a>
           {{else}}
             <a href="/login">Login</a>
           {{end}}

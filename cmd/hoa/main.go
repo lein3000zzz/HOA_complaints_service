@@ -103,6 +103,7 @@ func main() {
 
 	residentsRepo := residence.NewResidentPgRepo(logger, db)
 	staffRepo := staffdata.NewStaffRepoPostgres(logger, db)
+	reqRepo := requests.NewRequestPgRepo(logger, db, staffRepo, residentsRepo)
 
 	sm := &session.GinSessionManager{
 		Logger: logger,
@@ -116,22 +117,13 @@ func main() {
 		Logger:         logger,
 	}
 
-	//api.GET("/sd", userHandler.Login())
-
-	//api.GET("/incr", func(c *gin.Context) {
-	//	session := sessions.Default(c)
-	//	var count int
-	//	v := session.Get("count")
-	//	if v == nil {
-	//		count = 0
-	//	} else {
-	//		count = v.(int)
-	//		count++
-	//	}
-	//	session.Set("count", count)
-	//	session.Save()
-	//	c.JSON(200, gin.H{"count": count})
-	//})
+	reqHandler := handlers.RequestsHandler{
+		RequestsRepo:  reqRepo,
+		Logger:        logger,
+		StaffRepo:     staffRepo,
+		UserRepo:      userRepo,
+		ResidentsRepo: residentsRepo,
+	}
 
 	//_, err1 := userRepo.Register("7777777", "abobus")
 	//_, err2 := staffRepo.RegisterNewMember("7777777", "lein3000")
@@ -144,11 +136,17 @@ func main() {
 
 	r.Use(sm.UserFromSession())
 
+	staffGroup := r.Group("/staff")
+	staffGroup.Use(sm.UserFromSession(), sm.RequireRoles(session.StaffRole))
+
 	staffApiGroup := api.Group("/staff")
 	staffApiGroup.Use(sm.UserFromSession(), sm.RequireRoles(session.StaffRole))
 
-	staffGroup := r.Group("/staff")
-	staffGroup.Use(sm.UserFromSession(), sm.RequireRoles(session.StaffRole))
+	residentGroup := r.Group("/resident")
+	residentGroup.Use(sm.UserFromSession(), sm.RequireRoles(session.ResidentRole, session.StaffRole))
+
+	residentApiGroup := api.Group("/resident")
+	residentApiGroup.Use(sm.UserFromSession(), sm.RequireRoles(session.ResidentRole, session.StaffRole))
 
 	r.Static("/static", "./web/static")
 	//r.LoadHTMLGlob("web/templates/*.tmpl")
@@ -157,6 +155,8 @@ func main() {
 	api.POST("/login", userHandler.Login())
 	staffApiGroup.POST("/register", userHandler.Register())
 	r.GET("/login", pageH.LoginPage())
+	residentGroup.GET("/create-request", pageH.RequestPage())
+	residentApiGroup.POST("/create-request", reqHandler.CreateRequest())
 	r.GET("/logout", userHandler.Logout())
 	r.GET("/", pageH.MainPage())
 	staffGroup.GET("/register", pageH.RegisterPage())

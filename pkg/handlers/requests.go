@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type ComplaintsHandler struct {
+type RequestsHandler struct {
 	RequestsRepo  requests.RequestRepo
 	ResidentsRepo residence.ResidentsController
 	StaffRepo     staffdata.StaffRepo
@@ -20,9 +20,9 @@ type ComplaintsHandler struct {
 	Logger        *zap.SugaredLogger
 }
 
-func (h *ComplaintsHandler) CreateRequest() func(c *gin.Context) {
+func (h *RequestsHandler) CreateRequest() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		phoneVal, exists := c.Get("PhoneNumber")
+		phoneVal, exists := c.Get("phoneNumber")
 		phoneString, ok := phoneVal.(string)
 
 		responseJSON := gin.H{}
@@ -85,6 +85,8 @@ func (h *ComplaintsHandler) CreateRequest() func(c *gin.Context) {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, responseJSON)
 			return
 		}
+
+		h.Logger.Infof("created request: %v", request)
 
 		c.JSON(http.StatusOK, request)
 		return

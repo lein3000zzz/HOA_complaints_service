@@ -32,10 +32,12 @@ type RequestPgRepo struct {
 	residentsController residence.ResidentsController
 }
 
-func NewRequestPgRepo(logger *zap.SugaredLogger, db *gorm.DB) *RequestPgRepo {
+func NewRequestPgRepo(logger *zap.SugaredLogger, db *gorm.DB, staffRepo staffdata.StaffRepo, residentsRepo residence.ResidentsController) *RequestPgRepo {
 	return &RequestPgRepo{
-		logger: logger,
-		db:     db,
+		logger:              logger,
+		db:                  db,
+		staffController:     staffRepo,
+		residentsController: residentsRepo,
 	}
 }
 

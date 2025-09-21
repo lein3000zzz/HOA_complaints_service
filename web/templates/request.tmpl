@@ -1,0 +1,35 @@
+{{define "request.tmpl"}}
+    {{template "base" .}}
+{{end}}
+{{define "content"}}
+    <section class="card">
+        <h1 class="card-title">New request</h1>
+        {{/*    Я обязательно не забуду сделать правильные эндпоинты*/}}
+        <form id="request-form" class="form" data-endpoint="/api/resident/create-request">
+            <div class="form-row">
+                <label for="house-id">House ID</label>
+                <input id="house-id" name="phoneNumber" type="tel" required placeholder="0000">
+            </div>
+
+            <div class="form-row">
+                <label for="request-type">Request type</label>
+                <select id="request-type" name="RequestType" required>
+                    <option value="">Выберите опцию:</option>
+                    <option value="ремонт_внутриквартирный">Ремонт внутриквартирный</option>
+                    <option value="ремонт_общедомового_имущества">Ремонт общедомового имущества</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="request-complaint">Complaint</label>
+                <input id="request-complaint" name="Complaint" type="text" minlength="15" maxlength="30" required placeholder="Describe your problem">
+            </div>
+
+            <div class="form-row">
+                <button type="submit" class="btn">Send Request</button>
+            </div>
+
+            <output id="request-output" class="form-output" aria-live="polite"></output>
+        </form>
+    </section>
+{{end}}
