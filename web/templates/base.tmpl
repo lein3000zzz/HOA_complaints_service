@@ -10,15 +10,22 @@
   <header class="site-header">
     <div class="container">
       <a class="brand" href="/">HOA</a>
-      <nav class="nav">
-          {{if .phoneNumber}}
-              <span class="muted">Logged in as <b>{{.phoneNumber}}</b></span>
-              <a href="/resident/create-request" class="btn" style="margin-left:8px;">Create request</a>
-              <a href="/logout" class="btn" style="margin-left:8px;">Logout</a>
-          {{else}}
-            <a href="/login">Login</a>
-          {{end}}
-      </nav>
+        <nav class="nav">
+            {{if .phoneNumber}}
+                <div class="user-dropdown">
+                    <button id="user-toggle" class="user-toggle" aria-haspopup="true" aria-expanded="false">
+                        <span class="muted">Logged in as </span><b>{{.phoneNumber}}</b>
+                    </button>
+                    <div id="user-menu" class="user-menu" role="menu" aria-hidden="true">
+                        <a href="/resident/create-request" class="user-menu-item" role="menuitem">Create request</a>
+                        <a href="/resident/my-requests" class="user-menu-item" role="menuitem">My requests</a>
+                        <a href="/logout" class="user-menu-item" role="menuitem">Logout</a>
+                    </div>
+                </div>
+            {{else}}
+                <a href="/login">Login</a>
+            {{end}}
+        </nav>
     </div>
   </header>
 
@@ -43,7 +50,7 @@
     </div>
   </footer>
 
-  <script src="/static/js/auth.js"></script>
+  <script src="/static/js/script.js"></script>
 </body>
 </html>
 {{end}}

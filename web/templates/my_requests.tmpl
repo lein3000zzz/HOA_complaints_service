@@ -1,0 +1,45 @@
+{{define "my_requests.tmpl"}}
+    {{template "base" .}}
+{{end}}
+
+{{define "content"}}
+    <section class="card">
+        <h1 class="card-title">My requests</h1>
+
+        <div class="form-row" style="display:flex;gap:12px;align-items:center;">
+            <div style="font-weight:700;">Total requests: <span id="total-count">—</span></div>
+
+            <label style="margin-left:auto;">
+                Sort:
+                <select id="sort-select">
+                    <option value="created_desc">created desc</option>
+                    <option value="type_asc">type asc</option>
+                    <option value="status_asc">status asc</option>
+                </select>
+            </label>
+
+            <label>
+                Per page:
+                <select id="limit-select">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="20">20</option>
+                </select>
+            </label>
+
+            <button id="refresh-btn" class="btn" style="margin-left:8px;">Refresh</button>
+        </div>
+
+        <div id="requests-list" style="margin-top:16px;"></div>
+
+        <div id="pagination" class="form-row center" style="margin-top:12px; gap:8px;">
+            <button id="prev-page" class="btn">Prev</button>
+            <div id="page-info" style="font-weight:700;">Page <span id="current-page">1</span> / <span id="total-pages">1</span></div>
+            <button id="next-page" class="btn">Next</button>
+        </div>
+
+        <output id="requests-output" class="form-output" aria-live="polite"></output>
+    </section>
+
+    <script src="/static/js/my_requests.js"></script>
+{{end}}

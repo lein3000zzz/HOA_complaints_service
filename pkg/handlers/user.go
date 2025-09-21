@@ -7,7 +7,6 @@ import (
 	"DBPrototyping/pkg/userdata/session"
 	"DBPrototyping/pkg/utils"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -54,10 +53,15 @@ func (h *UserHandler) Register() func(c *gin.Context) {
 		}
 
 		responseJSON := gin.H{}
+		responseJSON["type"] = "login"
+
+		var finalErr error
 
 		user, errUserReg := h.UserRepo.Register(phoneNumber, password)
 		if errUserReg != nil {
-			responseJSON["userErr"] = errUserReg.Error()
+			finalErr = errors.Join(finalErr, errUserReg)
+			responseJSON["error"] = finalErr.Error()
+
 			h.Logger.Errorf("register phone number error: %s", errUserReg.Error())
 			c.AbortWithStatusJSON(http.StatusInternalServerError, responseJSON)
 
@@ -69,7 +73,8 @@ func (h *UserHandler) Register() func(c *gin.Context) {
 				_, errResidentReg := h.ResidentsRepo.RegisterNewResident(phoneNumber, fullName)
 				if errResidentReg != nil {
 					h.Logger.Errorf("register resident error: %s", errResidentReg.Error())
-					responseJSON["residentErr"] = fmt.Sprintf("resident registration error (it failed): %s", errResidentReg.Error())
+
+					finalErr = errors.Join(finalErr, errResidentReg)
 				}
 			}
 
@@ -77,12 +82,13 @@ func (h *UserHandler) Register() func(c *gin.Context) {
 				_, errStaffReg := h.StaffRepo.RegisterNewMember(phoneNumber, fullName)
 				if errStaffReg != nil {
 					h.Logger.Errorf("register staff error: %s", errStaffReg.Error())
-					responseJSON["residentErr"] = fmt.Sprintf("staff registration error (it failed): %s", errStaffReg.Error())
+					finalErr = errors.Join(finalErr, errStaffReg)
 				}
 			}
 		}
 
-		responseJSON["registered"] = user.Phone
+		responseJSON["error"] = finalErr.Error()
+		responseJSON["message"] = user.Phone
 		h.Logger.Debugf("user registered %s", user.Phone)
 		c.JSON(http.StatusOK, responseJSON)
 	}
@@ -102,14 +108,18 @@ func (h *UserHandler) Login() func(c *gin.Context) {
 			return
 		}
 
-		errResponseJSON := gin.H{}
+		responseJSON := gin.H{}
+		responseJSON["type"] = "login"
+
+		var finalErr error
 
 		userToLogin, errUserLogin := h.UserRepo.Authorize(phoneNumber, password)
 		if errUserLogin != nil {
-			errResponseJSON["userErr"] = errUserLogin.Error()
+			finalErr = errors.Join(finalErr, errUserLogin)
+			responseJSON["error"] = finalErr.Error()
 
 			h.Logger.Errorf("authorize phone number error: %s", errUserLogin.Error())
-			c.AbortWithStatusJSON(http.StatusUnauthorized, errResponseJSON)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, responseJSON)
 
 			return
 		}
@@ -120,7 +130,7 @@ func (h *UserHandler) Login() func(c *gin.Context) {
 			h.SessionManager.SetUserSessionRole(c, role)
 
 			if err := h.SessionManager.SaveSession(c); err != nil {
-				errResponseJSON["sessionErr"] = err.Error()
+				finalErr = errors.Join(finalErr, err)
 				h.Logger.Errorf("save session error: %s", err.Error())
 
 				return err
@@ -131,53 +141,62 @@ func (h *UserHandler) Login() func(c *gin.Context) {
 
 		staffMember, errStaff := h.StaffRepo.GetStaffMemberByPhoneNumber(userToLogin.Phone)
 		if errStaff != nil && errors.Is(errStaff, staffdata.ErrStaffMemberNotFound) {
-			errResponseJSON["staffErr"] = errStaff.Error()
+			finalErr = errors.Join(finalErr, errStaff)
+			responseJSON["error"] = finalErr.Error()
+
 			h.Logger.Errorf("staffMember error: %s", errStaff.Error())
 
-			c.AbortWithStatusJSON(http.StatusInternalServerError, errResponseJSON)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, responseJSON)
 			return
 		}
 
 		if staffMember != nil {
 			if err := saveRole(session.StaffRole); err != nil {
-				errResponseJSON["staffSaveErr"] = err.Error()
+				finalErr = errors.Join(finalErr, err)
+				responseJSON["error"] = finalErr.Error()
+
 				h.Logger.Errorf("save staff role error: %s", err.Error())
 
-				c.AbortWithStatusJSON(http.StatusInternalServerError, errResponseJSON)
+				c.AbortWithStatusJSON(http.StatusInternalServerError, responseJSON)
 				return
 			}
 
-			c.JSON(http.StatusOK, gin.H{
-				"phone": userToLogin.Phone,
-				"type":  "login",
-			})
+			responseJSON["message"] = userToLogin.Phone
+
+			c.JSON(http.StatusOK, responseJSON)
 			return
 		}
 
 		resident, errResident := h.ResidentsRepo.GetResidentByPhoneNumber(userToLogin.Phone)
 		if errResident != nil && errors.Is(errResident, residence.ErrResidentNotFound) {
-			errResponseJSON["residentErr"] = errResident.Error()
+			finalErr = errors.Join(finalErr, errResident)
+			responseJSON["error"] = finalErr.Error()
+
 			h.Logger.Errorf("resident error: %s", errResident.Error())
 
-			c.AbortWithStatusJSON(http.StatusInternalServerError, errResponseJSON)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, responseJSON)
 			return
 		}
 
 		if resident != nil {
 			if err := saveRole(session.ResidentRole); err != nil {
-				errResponseJSON["residentSaveErr"] = err.Error()
+				finalErr = errors.Join(finalErr, err)
+				responseJSON["error"] = finalErr.Error()
+
 				h.Logger.Errorf("save resident error: %s", err.Error())
 
-				c.AbortWithStatusJSON(http.StatusInternalServerError, errResponseJSON)
+				c.AbortWithStatusJSON(http.StatusInternalServerError, responseJSON)
 				return
 			}
 		}
 
 		//c.JSON(http.StatusOK, gin.H{"HEHHE": "HEHE"})
-		c.JSON(http.StatusOK, gin.H{
-			"phone": userToLogin.Phone,
-			"type":  "login",
-		})
+		//c.JSON(http.StatusOK, gin.H{
+		//	"phone": userToLogin.Phone,
+		//	"type":  "login",
+		//})
+		responseJSON["error"] = finalErr.Error()
+		responseJSON["message"] = userToLogin.Phone
 		return
 	}
 }

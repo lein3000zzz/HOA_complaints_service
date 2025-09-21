@@ -32,10 +32,11 @@ func (ResidentHousePg) TableName() string {
 }
 
 var (
-	ErrResidentExists        = errors.New("resident already exists")
-	ErrResidentNotFound      = errors.New("resident not found")
-	ErrHouseExists           = errors.New("house already exists")
-	ErrAddingResidentAddress = errors.New("error adding residential address")
+	ErrResidentExists         = errors.New("resident already exists")
+	ErrRegisterResidentFailed = errors.New("register resident fail")
+	ErrResidentNotFound       = errors.New("resident not found")
+	ErrHouseExists            = errors.New("house already exists")
+	ErrAddingResidentAddress  = errors.New("error adding residential address")
 )
 
 type ResidentPgRepo struct {
@@ -77,14 +78,21 @@ func (repo *ResidentPgRepo) RegisterNewResident(phone, fullName string) (*Reside
 		newResidentPg.ID = residentID
 
 		upsertRes := repo.db.WithContext(ctx).Clauses(clause.OnConflict{DoNothing: true}).Create(&newResidentPg)
-		if upsertRes.Error != nil || upsertRes.RowsAffected != 1 {
+		if upsertRes.Error != nil {
+			repo.logger.Warnf("failed to register newResident, %v", upsertRes.Error)
 			continue
 		}
+
+		if upsertRes.RowsAffected != 1 {
+			repo.logger.Warnf("failed to register new resident, already exists, %v", phone)
+			return nil, ErrResidentExists
+		}
+
 		createdFlag = true
 	}
 
 	if !createdFlag {
-		return nil, ErrResidentExists
+		return nil, ErrRegisterResidentFailed
 	}
 
 	newResident := Resident(newResidentPg)

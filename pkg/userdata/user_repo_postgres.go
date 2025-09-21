@@ -12,9 +12,10 @@ import (
 )
 
 var (
-	ErrUserNotFound = errors.New("user not found")
-	ErrUserExists   = errors.New("user already exists")
-	ErrCreatingUser = errors.New("error creating a new user")
+	ErrUserNotFound  = errors.New("user not found")
+	ErrUserExists    = errors.New("user already exists")
+	ErrWrongPassword = errors.New("wrong password")
+	ErrCreatingUser  = errors.New("error creating a new user")
 )
 
 type UserRepoPg struct {
@@ -53,7 +54,7 @@ func (repo *UserRepoPg) Authorize(login, password string) (*User, error) {
 
 	if ok := utils.CheckPassword(userPg.PasswordHash, password); !ok {
 		repo.logger.Debugf("User %s password not match", login)
-		return nil, ErrUserNotFound
+		return nil, ErrWrongPassword
 	}
 
 	user := User(userPg)
@@ -81,10 +82,11 @@ func (repo *UserRepoPg) Register(phone, password string) (*User, error) {
 	upsertRes := repo.db.WithContext(ctx).Clauses(clause.OnConflict{DoNothing: true}).Create(&userPg)
 
 	if upsertRes.Error != nil {
+		repo.logger.Warnf("failed to insert new user, err %v", upsertRes.Error)
 		return nil, upsertRes.Error
 	}
 	if upsertRes.RowsAffected != 1 {
-		repo.logger.Warnf("failed to insert new user %v", userPg)
+		repo.logger.Warnf("failed to insert new user %v, already exists", userPg)
 		return nil, ErrUserExists
 	}
 

@@ -1,5 +1,7 @@
 package requests
 
+import "time"
+
 type Request struct {
 	ID             string        `gorm:"type:char(40);primaryKey"`
 	ResidentID     string        `gorm:"column:id_resident;type:char(40);not null"`
@@ -10,6 +12,7 @@ type Request struct {
 	Status         RequestStatus `gorm:"type:request_status;default:'создана'"`
 	ResponsibleID  *int          `gorm:"column:id_responsible;type:bigint"`
 	OrganizationID *string       `gorm:"column:id_organization;type:char(40)"`
+	CreatedAt      time.Time     `gorm:"column:created_at;type:timestamp;not null;default:now()"`
 }
 
 type InitialRequestData struct {
@@ -21,6 +24,7 @@ type InitialRequestData struct {
 
 type RequestRepo interface {
 	CreateRequest(requestData InitialRequestData) (*Request, error)
+	GetResidentRequestsByPhone(phoneNumber string, limit, offset int, sort string) ([]*Request, int, error)
 	//UpdateRequest(request Request) error
 	//SelectResponsible(request Request)
 }

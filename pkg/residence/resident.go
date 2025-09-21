@@ -2,7 +2,7 @@ package residence
 
 type Resident struct {
 	ID       string  `gorm:"column:id;type:char(40);primaryKey"`
-	Phone    string  `gorm:"type:varchar(40);column:phone_number;not null"`
+	Phone    string  `gorm:"type:varchar(40);column:phone_number;not null;unique"`
 	FullName string  `gorm:"type:varchar(40);column:full_name;not null"`
 	Houses   []House `gorm:"many2many:residents_houses;"`
 }

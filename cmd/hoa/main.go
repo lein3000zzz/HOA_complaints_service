@@ -133,6 +133,12 @@ func main() {
 	//	return
 	//}
 	//log.Fatal("Successfully registered")
+	//_, errRegResident := residentsRepo.RegisterNewResident("7777777", "lein3000")
+
+	//if errRegResident != nil {
+	//	fmt.Println("Error registering new resident:", errRegResident)
+	//}
+	//log.Fatal("kekew")
 
 	r.Use(sm.UserFromSession())
 
@@ -152,10 +158,14 @@ func main() {
 	//r.LoadHTMLGlob("web/templates/*.tmpl")
 	pageH.InitHTML()
 	//r.LoadHTMLGlob("web/static/html/*.html")
+
+	residentGroup.GET("/my-requests", pageH.UserRequestsPage())
+	residentApiGroup.GET("/requests", reqHandler.GetRequestsForUser())
+
 	api.POST("/login", userHandler.Login())
 	staffApiGroup.POST("/register", userHandler.Register())
 	r.GET("/login", pageH.LoginPage())
-	residentGroup.GET("/create-request", pageH.RequestPage())
+	residentGroup.GET("/create-request", pageH.CreateRequestPage())
 	residentApiGroup.POST("/create-request", reqHandler.CreateRequest())
 	r.GET("/logout", userHandler.Logout())
 	r.GET("/", pageH.MainPage())

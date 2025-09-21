@@ -43,7 +43,7 @@
                     out.textContent = data.error || JSON.stringify(data) || `HTTP ${res.status}`;
                     out.className = "form-output error";
                 } else {
-                    out.textContent = "Success: " + (data.phone || "");
+                    out.textContent = "Success: " + (data.message || "");
                     if (data.type && data.type.toLowerCase() === "login") {
                         window.location.href = "/";
                     }
@@ -62,4 +62,32 @@
     handleSubmit("login-form", "login-output");
     handleSubmit("register-form", "register-output");
     handleSubmit("request-form", "request-output");
+
+    const initUserDropdown = () => {
+        const toggleBtn = document.getElementById('user-toggle');
+        const menu = document.getElementById('user-menu');
+        if (!toggleBtn || !menu) return;
+
+        const setExpanded = (v) => {
+            toggleBtn.setAttribute('aria-expanded', v ? 'true' : 'false');
+            menu.setAttribute('aria-hidden', v ? 'false' : 'true');
+            menu.style.display = v ? 'block' : 'none';
+        };
+
+        toggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = toggleBtn.getAttribute('aria-expanded') === 'true';
+            setExpanded(!isOpen);
+        });
+
+        document.addEventListener('click', () => setExpanded(false));
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') setExpanded(false);
+        });
+
+        menu.addEventListener('click', (e) => e.stopPropagation());
+    };
+
+    initUserDropdown();
 })();
