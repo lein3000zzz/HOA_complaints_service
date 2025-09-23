@@ -1,0 +1,19 @@
+{{define "admin.tmpl"}}
+    {{template "base" .}}
+{{end}}
+
+{{define "content"}}
+    <section class="card">
+        <h1 class="card-title">Admin Panel</h1>
+
+        <p style="color:var(--muted); margin-bottom:12px;">Quick navigator.</p>
+
+        <div class="col-stack">
+            <a id="btn-houses" class="btn" href="/staff/register">User registration</a>
+            <a id="btn-houses" class="btn" href="/staff/register">User registration</a>
+            <a id="btn-houses" class="btn" href="/staff/register">User registration</a>
+        </div>
+
+        <output id="admin-output" class="form-output" aria-live="polite" style="margin-top:12px;"></output>
+    </section>
+{{end}}

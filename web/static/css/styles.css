@@ -83,6 +83,13 @@ body {
     .user-menu { right: 0; left: 0; min-width: auto; }
 }
 
+.col-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 360px;
+}
+
 .card {
     background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
     border-radius:16px; padding:20px; margin:32px auto; max-width:100%;

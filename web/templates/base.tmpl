@@ -17,6 +17,9 @@
                         <span class="muted">Logged in as </span><b>{{.phoneNumber}}</b>
                     </button>
                     <div id="user-menu" class="user-menu" role="menu" aria-hidden="true">
+                        {{if eq .role "staff"}}
+                            <a href="/staff/admin-panel" class="user-menu-item" role="menuitem">Admin panel</a>
+                        {{end}}
                         <a href="/resident/create-request" class="user-menu-item" role="menuitem">Create request</a>
                         <a href="/resident/my-requests" class="user-menu-item" role="menuitem">My requests</a>
                         <a href="/logout" class="user-menu-item" role="menuitem">Logout</a>
@@ -31,16 +34,7 @@
 
   <main class="container">
 
-{{/*      {{template "content" .}}*/}}
-{{/*      {{block "content" .}}{{end}}*/}}
-{{/*      {{if eq .content "login.content"}}*/}}
       {{template "content" .}}
-{{/*          {{template "login.content" .}}*/}}
-{{/*      {{else if eq .content "register.content"}}*/}}
-{{/*          {{template "register.content" .}}*/}}
-{{/*      {{else }}*/}}
-{{/*      <h3>Welcome to the club </h3>*/}}
-{{/*      {{end}}*/}}
 
   </main>
 

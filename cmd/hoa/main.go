@@ -170,6 +170,7 @@ func main() {
 	r.GET("/logout", userHandler.Logout())
 	r.GET("/", pageH.MainPage())
 	staffGroup.GET("/register", pageH.RegisterPage())
+	staffGroup.GET("/admin-panel", pageH.AdminPage())
 
 	r.Run(":8000")
 

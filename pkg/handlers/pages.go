@@ -23,6 +23,7 @@ func (h *PageHandler) InitHTML() {
 		"login.tmpl",
 		"create_request.tmpl",
 		"my_requests.tmpl",
+		"admin.tmpl",
 	}
 
 	h.Templates = make(map[string]*template.Template)
@@ -52,9 +53,17 @@ func (h *PageHandler) respondWithHTML(c *gin.Context, templateName string, data 
 
 func (h *PageHandler) MainPage() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		phoneVal, _ := c.Get("phoneNumber")
+		phoneVal, exists := c.Get("phoneNumber")
+
+		if !exists {
+			c.Redirect(http.StatusSeeOther, "/login")
+		}
+
+		roleVal, _ := c.Get("role")
+
 		data := gin.H{
 			"title":       "main",
+			"role":        roleVal,
 			"phoneNumber": phoneVal,
 		}
 
@@ -70,8 +79,11 @@ func (h *PageHandler) LoginPage() gin.HandlerFunc {
 			c.Redirect(http.StatusFound, "/")
 		}
 
+		roleVal, _ := c.Get("role")
+
 		data := gin.H{
 			"title":       "main",
+			"role":        roleVal,
 			"phoneNumber": phoneVal,
 		}
 
@@ -82,9 +94,11 @@ func (h *PageHandler) LoginPage() gin.HandlerFunc {
 func (h *PageHandler) RegisterPage() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		phoneVal, _ := c.Get("phoneNumber")
-		//c.HTML(http.StatusOK, "register.tmpl", )
+		roleVal, _ := c.Get("role")
+
 		data := gin.H{
 			"title":       "Register",
+			"role":        roleVal,
 			"phoneNumber": phoneVal,
 		}
 
@@ -95,9 +109,11 @@ func (h *PageHandler) RegisterPage() gin.HandlerFunc {
 func (h *PageHandler) CreateRequestPage() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		phoneVal, _ := c.Get("phoneNumber")
+		roleVal, _ := c.Get("role")
 
 		data := gin.H{
 			"title":       "main",
+			"role":        roleVal,
 			"phoneNumber": phoneVal,
 		}
 
@@ -108,11 +124,29 @@ func (h *PageHandler) CreateRequestPage() gin.HandlerFunc {
 func (h *PageHandler) UserRequestsPage() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		phoneVal, _ := c.Get("phoneNumber")
+		roleVal, _ := c.Get("role")
+
 		data := gin.H{
 			"title":       "my requests",
+			"role":        roleVal,
 			"phoneNumber": phoneVal,
 		}
 
 		h.respondWithHTML(c, "my_requests.tmpl", data)
+	}
+}
+
+func (h *PageHandler) AdminPage() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		phoneVal, _ := c.Get("phoneNumber")
+		roleVal, _ := c.Get("role")
+
+		data := gin.H{
+			"title":       "admin panel",
+			"role":        roleVal,
+			"phoneNumber": phoneVal,
+		}
+
+		h.respondWithHTML(c, "admin.tmpl", data)
 	}
 }
