@@ -25,7 +25,7 @@ type InitialRequestData struct {
 type RequestRepo interface {
 	CreateRequest(requestData InitialRequestData) (*Request, error)
 	GetResidentRequestsByPhone(phoneNumber string, limit, offset int, sort string) ([]*Request, int, error)
-	GetAll() ([]*Request, error)
+	GetAll(limit, offset int, sort string) ([]*Request, int, error)
 	//UpdateRequest(request Request) error
 	//SelectResponsible(request Request)
 }

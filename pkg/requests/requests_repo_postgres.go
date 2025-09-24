@@ -149,24 +149,70 @@ func (repo *RequestPgRepo) GetResidentRequestsByPhone(phoneNumber string, limit,
 	return requests, int(total), nil
 }
 
-func (repo *RequestPgRepo) GetAll() ([]*Request, error) {
+//func (repo *RequestPgRepo) GetAll() ([]*Request, error) {
+//	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+//	defer cancel()
+//
+//	var requestsPg []*RequestPg
+//	queryRes := repo.db.WithContext(ctx).Find(&requestsPg)
+//
+//	if queryRes.Error != nil {
+//		repo.logger.Errorf("error getting all requests, %v", queryRes.Error)
+//		return nil, queryRes.Error
+//	}
+//
+//	requests := make([]*Request, len(requestsPg))
+//	for i, requestPg := range requestsPg {
+//		requests[i] = (*Request)(requestPg)
+//	}
+//
+//	return requests, nil
+//}
+
+func (repo *RequestPgRepo) GetAll(limit, offset int, sort string) ([]*Request, int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var requestsPg []*RequestPg
-	queryRes := repo.db.WithContext(ctx).Find(&requestsPg)
+	var requests []*Request
 
-	if queryRes.Error != nil {
-		repo.logger.Errorf("error getting all requests, %v", queryRes.Error)
-		return nil, queryRes.Error
+	reqTable := RequestPg{}
+
+	queryRes := repo.db.WithContext(ctx).Find(&reqTable)
+
+	var total int64
+	if err := queryRes.Count(&total).Error; err != nil {
+		repo.logger.Warnf("failed to count requests: %v", err)
+		return nil, 0, err
 	}
 
-	requests := make([]*Request, len(requestsPg))
-	for i, requestPg := range requestsPg {
-		requests[i] = (*Request)(requestPg)
+	if total == 0 {
+		return []*Request{}, 0, nil
 	}
 
-	return requests, nil
+	var order string
+	switch sort {
+	case "status_asc":
+		order = "req.status ASC"
+	case "type_asc":
+		order = "req.type ASC"
+	default:
+		order = "req.created_at DESC"
+	}
+
+	if limit > 0 {
+		queryRes = queryRes.Limit(limit)
+	}
+	if offset > 0 {
+		queryRes = queryRes.Offset(offset)
+	}
+	queryRes = queryRes.Order(order)
+
+	if err := queryRes.Find(&requests).Error; err != nil {
+		repo.logger.Warnf("failed to query requests: %v", err)
+		return nil, 0, err
+	}
+
+	return requests, int(total), nil
 }
 
 //func (repo *RequestPgRepo) ChooseResponsibleByJobTitle(jobTitle string) {
