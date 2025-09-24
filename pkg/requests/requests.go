@@ -15,6 +15,23 @@ type Request struct {
 	CreatedAt      time.Time     `gorm:"column:created_at;type:timestamp;not null;default:now()"`
 }
 
+type RequestFilter struct {
+	ID             *string
+	ResidentID     *string
+	HouseID        *int
+	RequestType    *RequestType
+	Complaint      *string
+	Cost           *float64
+	Status         *RequestStatus
+	ResponsibleID  *int
+	OrganizationID *string
+	CreatedAt      *time.Time
+
+	Limit  int
+	Offset int
+	Sort   string
+}
+
 type InitialRequestData struct {
 	ResidentID  string
 	HouseID     int
@@ -26,6 +43,7 @@ type RequestRepo interface {
 	CreateRequest(requestData InitialRequestData) (*Request, error)
 	GetResidentRequestsByPhone(phoneNumber string, limit, offset int, sort string) ([]*Request, int, error)
 	GetAll(limit, offset int, sort string) ([]*Request, int, error)
+	GetByFilter(filter RequestFilter) ([]*Request, int, error)
 	//UpdateRequest(request Request) error
 	//SelectResponsible(request Request)
 }

@@ -113,23 +113,42 @@ func (repo *UserRepoPg) DeleteByPhone(phone string) error {
 	return nil
 }
 
-func (repo *UserRepoPg) GetAll() ([]*User, error) {
+func (repo *UserRepoPg) GetAll(limit, offset int) ([]*User, int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var usersPg []*UserPg
-	err := repo.db.WithContext(ctx).Find(&usersPg).Error
-	if err != nil {
-		repo.logger.Warnf("failed to query all usersPg, err %v", err.Error())
-		return nil, err
+	var userPg []*UserPg
+
+	query := repo.db.WithContext(ctx).Model(&UserPg{})
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		repo.logger.Warnf("failed to count userPg: %v", err)
+		return nil, 0, err
 	}
 
-	users := make([]*User, len(usersPg))
-	for i, userPg := range usersPg {
-		users[i] = (*User)(userPg)
+	if total == 0 {
+		return []*User{}, 0, nil
 	}
 
-	return users, nil
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+	if offset > 0 {
+		query = query.Offset(offset)
+	}
+
+	if err := query.Find(&userPg).Error; err != nil {
+		repo.logger.Warnf("failed to query userPg: %v", err)
+		return nil, 0, err
+	}
+
+	users := make([]*User, len(userPg))
+	for i, requestPg := range userPg {
+		users[i] = (*User)(requestPg)
+	}
+
+	return users, int(total), nil
 }
 
 //func (repo *UserRepoPg) checkUserExists(phone string) (bool, error) {

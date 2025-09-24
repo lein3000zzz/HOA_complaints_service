@@ -169,47 +169,75 @@ func (repo *RequestPgRepo) GetResidentRequestsByPhone(phoneNumber string, limit,
 //	return requests, nil
 //}
 
-func (repo *RequestPgRepo) GetAll(limit, offset int, sort string) ([]*Request, int, error) {
+func (repo *RequestPgRepo) GetByFilter(filter RequestFilter) ([]*Request, int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var requests []*Request
+	var requestsPg []*RequestPg
 
-	reqTable := RequestPg{}
+	reqTable := RequestPg{}.TableName()
+	query := repo.db.WithContext(ctx).Table(reqTable + " AS req").Model(&RequestPg{})
 
-	queryRes := repo.db.WithContext(ctx).Find(&reqTable)
-
-	var total int64
-	if err := queryRes.Count(&total).Error; err != nil {
-		repo.logger.Warnf("failed to count requests: %v", err)
-		return nil, 0, err
+	if filter.Status != nil {
+		query = query.Where("req.status = ?", string(*filter.Status))
+	}
+	if filter.RequestType != nil {
+		query = query.Where("req.type = ?", string(*filter.RequestType))
+	}
+	if filter.ResidentID != nil {
+		query = query.Where("req.id_resident = ?", *filter.ResidentID)
+	}
+	if filter.HouseID != nil {
+		query = query.Where("req.id_house = ?", *filter.HouseID)
+	}
+	if filter.ResponsibleID != nil {
+		query = query.Where("req.id_responsible = ?", *filter.ResponsibleID)
+	}
+	if filter.OrganizationID != nil {
+		query = query.Where("req.id_organization = ?", *filter.OrganizationID)
 	}
 
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		repo.logger.Warnf("failed to count requests with filter: %v", err)
+		return nil, 0, err
+	}
 	if total == 0 {
 		return []*Request{}, 0, nil
 	}
 
 	var order string
-	switch sort {
+	switch filter.Sort {
 	case "status_asc":
 		order = "req.status ASC"
+	case "status_desc":
+		order = "req.status DESC"
 	case "type_asc":
 		order = "req.type ASC"
+	case "type_desc":
+		order = "req.type DESC"
+	case "created_asc":
+		order = "req.created_at ASC"
 	default:
 		order = "req.created_at DESC"
 	}
 
-	if limit > 0 {
-		queryRes = queryRes.Limit(limit)
+	if filter.Limit > 0 {
+		query = query.Limit(filter.Limit)
 	}
-	if offset > 0 {
-		queryRes = queryRes.Offset(offset)
+	if filter.Offset > 0 {
+		query = query.Offset(filter.Offset)
 	}
-	queryRes = queryRes.Order(order)
+	query = query.Order(order)
 
-	if err := queryRes.Find(&requests).Error; err != nil {
-		repo.logger.Warnf("failed to query requests: %v", err)
+	if err := query.Find(&requestsPg).Error; err != nil {
+		repo.logger.Warnf("failed to query filtered requests: %v", err)
 		return nil, 0, err
+	}
+
+	requests := make([]*Request, len(requestsPg))
+	for i, r := range requestsPg {
+		requests[i] = (*Request)(r)
 	}
 
 	return requests, int(total), nil
