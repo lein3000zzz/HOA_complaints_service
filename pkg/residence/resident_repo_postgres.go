@@ -182,3 +182,20 @@ func (repo *ResidentPgRepo) ValidateResidentHouse(residentID string, houseID int
 
 	return true, nil
 }
+
+func (repo *ResidentPgRepo) DeleteResidentByPhone(phoneNumber string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	deleteRes := repo.db.WithContext(ctx).Where("phone_number = ?", phoneNumber).Delete(&Resident{})
+	if deleteRes.Error != nil {
+		repo.logger.Errorf("error deleting resident with phone number %s: %v", phoneNumber, deleteRes.Error)
+		return deleteRes.Error
+	}
+	if deleteRes.RowsAffected != 1 {
+		repo.logger.Warnf("failed to delete resident with phone number, no such user %s", phoneNumber)
+		return ErrResidentNotFound
+	}
+
+	return nil
+}

@@ -172,6 +172,8 @@ func main() {
 	staffGroup.GET("/register", pageH.RegisterPage())
 	staffGroup.GET("/admin-panel", pageH.AdminPage())
 
+	staffApiGroup.GET("/user/delete/:phoneNumber")
+
 	r.Run(":8000")
 
 	//err2 := GenerateSeed(db, logger)

@@ -8,4 +8,5 @@ type User struct {
 type UserRepo interface {
 	Authorize(phone, password string) (*User, error)
 	Register(phone, password string) (*User, error)
+	DeleteByPhone(phone string) error
 }

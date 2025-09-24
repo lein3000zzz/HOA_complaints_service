@@ -24,4 +24,5 @@ type ResidentsController interface {
 	AddResidentAddressAssoc(residentID string, houseID int) error
 	GetResidentByPhoneNumber(phoneNumber string) (*Resident, error)
 	ValidateResidentHouse(residentID string, houseID int) (bool, error)
+	DeleteResidentByPhone(phoneNumber string) error
 }

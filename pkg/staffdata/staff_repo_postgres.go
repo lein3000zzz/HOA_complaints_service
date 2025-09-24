@@ -157,3 +157,22 @@ func (repo *StaffRepoPostgres) GetStaffMemberByPhoneNumber(phoneNumber string) (
 	staffMember := StaffMember(staffMemberPg)
 	return &staffMember, nil
 }
+
+func (repo *StaffRepoPostgres) DeleteByPhone(phoneNumber string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	deleteRes := repo.db.WithContext(ctx).Where("phone_number = ?", phoneNumber).Delete(&StaffMember{})
+
+	if deleteRes.Error != nil {
+		repo.logger.Errorf("failed to delete staff member: %s", deleteRes.Error)
+		return deleteRes.Error
+	}
+
+	if deleteRes.RowsAffected != 1 {
+		repo.logger.Warnf("failed to delete staff member, no such phone %s: %v", phoneNumber, deleteRes.RowsAffected)
+		return ErrStaffMemberNotFound
+	}
+
+	return nil
+}
