@@ -149,6 +149,26 @@ func (repo *RequestPgRepo) GetResidentRequestsByPhone(phoneNumber string, limit,
 	return requests, int(total), nil
 }
 
+func (repo *RequestPgRepo) GetAll() ([]*Request, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var requestsPg []*RequestPg
+	queryRes := repo.db.WithContext(ctx).Find(&requestsPg)
+
+	if queryRes.Error != nil {
+		repo.logger.Errorf("error getting all requests, %v", queryRes.Error)
+		return nil, queryRes.Error
+	}
+
+	requests := make([]*Request, len(requestsPg))
+	for i, requestPg := range requestsPg {
+		requests[i] = (*Request)(requestPg)
+	}
+
+	return requests, nil
+}
+
 //func (repo *RequestPgRepo) ChooseResponsibleByJobTitle(jobTitle string) {
 //
 //}

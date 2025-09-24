@@ -201,6 +201,58 @@ func (h *UserHandler) Login() func(c *gin.Context) {
 	}
 }
 
+func (h *UserHandler) DeleteUser() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		phoneNumber := c.Param("phoneNumber")
+
+		var finalErr error
+		responseJSON := gin.H{}
+
+		userDeleteErr := h.UserRepo.DeleteByPhone(phoneNumber)
+		if userDeleteErr != nil {
+			finalErr = errors.Join(finalErr, userDeleteErr)
+		}
+
+		residentDeleteErr := h.ResidentsRepo.DeleteResidentByPhone(phoneNumber)
+		if residentDeleteErr != nil {
+			finalErr = errors.Join(finalErr, residentDeleteErr)
+		}
+
+		staffDeleteErr := h.StaffRepo.DeleteByPhone(phoneNumber)
+		if staffDeleteErr != nil {
+			finalErr = errors.Join(finalErr, staffDeleteErr)
+		}
+
+		if finalErr != nil {
+			h.Logger.Errorf("user delete error: %s", finalErr.Error())
+			responseJSON["error"] = finalErr.Error()
+
+			c.JSON(http.StatusInternalServerError, responseJSON)
+			return
+		}
+
+		responseJSON["message"] = "success"
+		c.JSON(http.StatusOK, responseJSON)
+	}
+}
+
+func (h *UserHandler) GetAllUsers() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		users, errGetUsers := h.UserRepo.GetAll()
+
+		responseJSON := gin.H{}
+
+		if errGetUsers != nil {
+			h.Logger.Errorf("get users error: %s", errGetUsers.Error())
+			responseJSON["error"] = errGetUsers.Error()
+			c.JSON(http.StatusInternalServerError, responseJSON)
+		}
+
+		responseJSON["users"] = users
+		c.JSON(http.StatusOK, responseJSON)
+	}
+}
+
 func (h *UserHandler) Logout() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		h.SessionManager.ClearSession(c)

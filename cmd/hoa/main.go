@@ -172,7 +172,8 @@ func main() {
 	staffGroup.GET("/register", pageH.RegisterPage())
 	staffGroup.GET("/admin-panel", pageH.AdminPage())
 
-	staffApiGroup.GET("/user/delete/:phoneNumber")
+	staffApiGroup.GET("/user/delete/:phoneNumber", userHandler.DeleteUser())
+	staffApiGroup.GET("/user/list", userHandler.GetAllUsers())
 
 	r.Run(":8000")
 

@@ -99,7 +99,7 @@ func (repo *UserRepoPg) DeleteByPhone(phone string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	deleteRes := repo.db.WithContext(ctx).Where("phone_number = ?", phone).Delete(&User{})
+	deleteRes := repo.db.WithContext(ctx).Where("phone_number = ?", phone).Delete(&UserPg{})
 
 	if deleteRes.Error != nil {
 		repo.logger.Warnf("failed to delete user, err %v", deleteRes.Error)
@@ -111,6 +111,25 @@ func (repo *UserRepoPg) DeleteByPhone(phone string) error {
 	}
 
 	return nil
+}
+
+func (repo *UserRepoPg) GetAll() ([]*User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var usersPg []*UserPg
+	err := repo.db.WithContext(ctx).Find(&usersPg).Error
+	if err != nil {
+		repo.logger.Warnf("failed to query all usersPg, err %v", err.Error())
+		return nil, err
+	}
+
+	users := make([]*User, len(usersPg))
+	for i, userPg := range usersPg {
+		users[i] = (*User)(userPg)
+	}
+
+	return users, nil
 }
 
 //func (repo *UserRepoPg) checkUserExists(phone string) (bool, error) {
