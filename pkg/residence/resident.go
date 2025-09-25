@@ -25,4 +25,6 @@ type ResidentsController interface {
 	GetResidentByPhoneNumber(phoneNumber string) (*Resident, error)
 	ValidateResidentHouse(residentID string, houseID int) (bool, error)
 	DeleteResidentByPhone(phoneNumber string) error
+	FindResidentHouses(residentID string) ([]*House, error)
+	DeleteResidentHouse(residentID string, houseID int) error
 }

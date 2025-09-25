@@ -31,6 +31,8 @@ type StaffRepo interface {
 	GetStaffMemberByPhoneNumber(phoneNumber string) (*StaffMember, error)
 	DeleteByPhone(phoneNumber string) error
 	FindLeastBusyByJobID(jobID string) (*StaffMember, error)
+	FindCurrentSpecializations(staffMemberID int) ([]*Specialization, error)
+	DeactivateStaffMemberSpecialization(staffMemberID int, jobID string) error
 }
 
 type StaffMemberStatus string

@@ -187,15 +187,86 @@ func (repo *ResidentPgRepo) DeleteResidentByPhone(phoneNumber string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	deleteRes := repo.db.WithContext(ctx).Where("phone_number = ?", phoneNumber).Delete(&Resident{})
+	var residentPg ResidentPg
+	if err := repo.db.WithContext(ctx).Where("phone_number = ?", phoneNumber).First(&residentPg).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			repo.logger.Warnf("failed to delete resident, no such user %s", phoneNumber)
+			return ErrResidentNotFound
+		}
+		repo.logger.Errorf("error finding resident with phone number %s: %v", phoneNumber, err)
+		return err
+	}
+
+	err := repo.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if del := tx.Table(ResidentHousePg{}.TableName()).Where("id_resident = ?", residentPg.ID).Delete(&ResidentHousePg{}); del.Error != nil {
+			repo.logger.Errorf("error deleting resident-house mappings for resident %s: %v", residentPg.ID, del.Error)
+			return del.Error
+		}
+
+		deleteRes := tx.Where("phone_number = ?", phoneNumber).Delete(&ResidentPg{})
+		if deleteRes.Error != nil {
+			repo.logger.Errorf("error deleting resident with phone number %s: %v", phoneNumber, deleteRes.Error)
+			return deleteRes.Error
+		}
+		if deleteRes.RowsAffected != 1 {
+			repo.logger.Warnf("failed to delete resident with phone number, no such user %s", phoneNumber)
+			return ErrResidentNotFound
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (repo *ResidentPgRepo) FindResidentHouses(residentID string) ([]*House, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var housesPg []HousePg
+	if err := repo.db.WithContext(ctx).
+		Table(HousePg{}.TableName()).
+		Joins("join "+ResidentHousePg{}.TableName()+
+			" rh on rh.id_house = "+HousePg{}.TableName()+".id").
+		Where("rh.id_resident = ?", residentID).
+		Find(&housesPg).Error; err != nil {
+		repo.logger.Errorf("failed to fetch houses for resident %s: %v", residentID, err)
+		return nil, err
+	}
+
+	houses := make([]*House, 0, len(housesPg))
+	for i := range housesPg {
+		h := House(housesPg[i])
+		houses = append(houses, &h)
+	}
+
+	return houses, nil
+}
+
+func (repo *ResidentPgRepo) DeleteResidentHouse(residentID string, houseID int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	deleteRes := repo.db.WithContext(ctx).
+		Table(ResidentHousePg{}.TableName()).
+		Where("id_resident = ?", residentID).
+		Where("id_house = ?", houseID).
+		Delete(&ResidentHousePg{})
+
 	if deleteRes.Error != nil {
-		repo.logger.Errorf("error deleting resident with phone number %s: %v", phoneNumber, deleteRes.Error)
+		repo.logger.Errorf("failed to remove resident-house mapping resident=%s house=%d: %v", residentID, houseID, deleteRes.Error)
 		return deleteRes.Error
 	}
+
 	if deleteRes.RowsAffected != 1 {
-		repo.logger.Warnf("failed to delete resident with phone number, no such user %s", phoneNumber)
+		repo.logger.Debugf("no mapping found to delete for resident=%s house=%d", residentID, houseID)
 		return ErrResidentNotFound
 	}
 
+	repo.logger.Infof("removed house %d from resident %s", houseID, residentID)
 	return nil
 }

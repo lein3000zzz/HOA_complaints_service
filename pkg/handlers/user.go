@@ -141,7 +141,7 @@ func (h *UserHandler) Login() func(c *gin.Context) {
 		}
 
 		staffMember, errStaff := h.StaffRepo.GetStaffMemberByPhoneNumber(userToLogin.Phone)
-		if errStaff != nil && errors.Is(errStaff, staffdata.ErrStaffMemberNotFound) {
+		if errStaff != nil && !errors.Is(errStaff, staffdata.ErrStaffMemberNotFound) {
 			finalErr = errors.Join(finalErr, errStaff)
 			responseJSON["error"] = finalErr.Error()
 
@@ -169,7 +169,7 @@ func (h *UserHandler) Login() func(c *gin.Context) {
 		}
 
 		resident, errResident := h.ResidentsRepo.GetResidentByPhoneNumber(userToLogin.Phone)
-		if errResident != nil && errors.Is(errResident, residence.ErrResidentNotFound) {
+		if errResident != nil && !errors.Is(errResident, residence.ErrResidentNotFound) {
 			finalErr = errors.Join(finalErr, errResident)
 			responseJSON["error"] = finalErr.Error()
 
@@ -191,11 +191,6 @@ func (h *UserHandler) Login() func(c *gin.Context) {
 			}
 		}
 
-		//c.JSON(http.StatusOK, gin.H{"HEHHE": "HEHE"})
-		//c.JSON(http.StatusOK, gin.H{
-		//	"phone": userToLogin.Phone,
-		//	"type":  "login",
-		//})
 		responseJSON["error"] = finalErr.Error()
 		responseJSON["message"] = userToLogin.Phone
 		return
@@ -209,19 +204,35 @@ func (h *UserHandler) DeleteUser() func(c *gin.Context) {
 		var finalErr error
 		responseJSON := gin.H{}
 
-		userDeleteErr := h.UserRepo.DeleteByPhone(phoneNumber)
-		if userDeleteErr != nil {
-			finalErr = errors.Join(finalErr, userDeleteErr)
-		}
-
 		residentDeleteErr := h.ResidentsRepo.DeleteResidentByPhone(phoneNumber)
-		if residentDeleteErr != nil {
+		if residentDeleteErr != nil && !errors.Is(residentDeleteErr, residence.ErrResidentNotFound) {
+			h.Logger.Errorf("delete resident error: %s", residentDeleteErr.Error())
 			finalErr = errors.Join(finalErr, residentDeleteErr)
+
+			responseJSON["error"] = finalErr.Error()
+			c.AbortWithStatusJSON(http.StatusInternalServerError, responseJSON)
+
+			return
 		}
 
 		staffDeleteErr := h.StaffRepo.DeleteByPhone(phoneNumber)
-		if staffDeleteErr != nil {
+		if staffDeleteErr != nil && !errors.Is(staffDeleteErr, staffdata.ErrStaffMemberNotFound) {
+			h.Logger.Errorf("delete staff error: %s", staffDeleteErr.Error())
 			finalErr = errors.Join(finalErr, staffDeleteErr)
+
+			responseJSON["error"] = finalErr.Error()
+			c.AbortWithStatusJSON(http.StatusInternalServerError, responseJSON)
+			return
+		}
+
+		userDeleteErr := h.UserRepo.DeleteByPhone(phoneNumber)
+		if userDeleteErr != nil {
+			h.Logger.Errorf("delete user error: %s", userDeleteErr.Error())
+			finalErr = errors.Join(finalErr, userDeleteErr)
+
+			responseJSON["error"] = finalErr.Error()
+			c.AbortWithStatusJSON(http.StatusInternalServerError, responseJSON)
+			return
 		}
 
 		if finalErr != nil {
@@ -237,10 +248,12 @@ func (h *UserHandler) DeleteUser() func(c *gin.Context) {
 	}
 }
 
-func (h *UserHandler) GetAllUsers() func(c *gin.Context) {
+func (h *UserHandler) GetAllUsersFiltered() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		page := 1
 		limit := 10
+
+		responseJSON := gin.H{}
 
 		if p := c.Query("page"); p != "" {
 			if v, err := strconv.Atoi(p); err == nil && v > 0 {
@@ -252,13 +265,16 @@ func (h *UserHandler) GetAllUsers() func(c *gin.Context) {
 				limit = v
 			}
 		}
+		phoneToMatch := c.Query("phoneNumber")
 
 		offset := (page - 1) * limit
 
-		users, total, err := h.UserRepo.GetAll(limit, offset)
+		users, total, err := h.UserRepo.GetAll(phoneToMatch, limit, offset)
 		if err != nil {
 			h.Logger.Errorf("get users error: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get users"})
+			responseJSON["error"] = err.Error()
+
+			c.JSON(http.StatusInternalServerError, responseJSON)
 			return
 		}
 
@@ -270,15 +286,60 @@ func (h *UserHandler) GetAllUsers() func(c *gin.Context) {
 			}
 		}
 
-		c.JSON(http.StatusOK, gin.H{
-			"users": users,
-			"meta": gin.H{
-				"total": total,
-				"page":  page,
-				"limit": limit,
-				"pages": pages,
-			},
-		})
+		phones := make([]string, len(users))
+		for i, user := range users {
+			phones[i] = user.Phone
+		}
+
+		meta := gin.H{
+			"total": total,
+			"page":  page,
+			"limit": limit,
+			"pages": pages,
+		}
+
+		responseJSON["phones"] = phones
+		responseJSON["meta"] = meta
+
+		c.JSON(http.StatusOK, responseJSON)
+	}
+}
+
+func (h *UserHandler) GetUserDetails() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		phoneNumber := c.Param("phoneNumber")
+
+		responseJSON := gin.H{}
+
+		staffMember, errStaff := h.StaffRepo.GetStaffMemberByPhoneNumber(phoneNumber)
+		if errStaff != nil && !errors.Is(errStaff, staffdata.ErrStaffMemberNotFound) {
+			responseJSON["error"] = errStaff.Error()
+
+			h.Logger.Errorf("staffMember error: %s", errStaff.Error())
+
+			c.AbortWithStatusJSON(http.StatusInternalServerError, responseJSON)
+			return
+		}
+
+		if staffMember != nil {
+			responseJSON["staff"] = staffMember
+		}
+
+		resident, errResident := h.ResidentsRepo.GetResidentByPhoneNumber(phoneNumber)
+		if errResident != nil && !errors.Is(errResident, residence.ErrResidentNotFound) {
+			responseJSON["error"] = errResident.Error()
+
+			h.Logger.Errorf("resident error: %s", errResident.Error())
+
+			c.AbortWithStatusJSON(http.StatusInternalServerError, responseJSON)
+			return
+		}
+
+		if resident != nil {
+			responseJSON["resident"] = resident
+		}
+
+		c.JSON(http.StatusOK, responseJSON)
 	}
 }
 

@@ -265,7 +265,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             try {
                 if (editOutput) { editOutput.textContent = 'Looking up...'; editOutput.className = 'form-output'; }
-                const url = '/api/staff/requests/panel/update?jobID=' + encodeURIComponent(jobID);
+                const url = '/api/staff/requests/panel/update/random-assign?jobID=' + encodeURIComponent(jobID);
                 const res = await fetch(url, { method: 'GET', credentials: 'same-origin' });
                 const data = await res.json();
                 if (!res.ok) {

@@ -125,6 +125,16 @@ func main() {
 		ResidentsRepo: residentsRepo,
 	}
 
+	staffHandler := handlers.StaffHandler{
+		StaffRepo: staffRepo,
+		Logger:    logger,
+	}
+
+	resHandler := handlers.ResidentsHandler{
+		ResidentsRepo: residentsRepo,
+		Logger:        logger,
+	}
+
 	//_, err1 := userRepo.Register("7777777", "abobus")
 	//_, err2 := staffRepo.RegisterNewMember("7777777", "lein3000")
 	//if err1 != nil || err2 != nil {
@@ -172,15 +182,23 @@ func main() {
 	staffGroup.GET("/register", pageH.RegisterPage())
 	staffGroup.GET("/admin-panel", pageH.AdminPage())
 
+	staffApiGroup.GET("/users/list", userHandler.GetAllUsersFiltered())
 	staffApiGroup.GET("/users/delete/:phoneNumber", userHandler.DeleteUser())
-	staffApiGroup.GET("/users/list", userHandler.GetAllUsers())
+
+	staffApiGroup.GET("/users/info/:phoneNumber", userHandler.GetUserDetails())
+
+	staffApiGroup.GET("/users/resident/info", resHandler.GetHousesForResident())
+	staffApiGroup.GET("/users/resident/remove-house", resHandler.DeleteHouseForResident())
+	staffApiGroup.GET("/users/staff/info", staffHandler.GetSpecializationsForStaffMember())
+	staffApiGroup.GET("/users/staff/delete-spec", staffHandler.DeactivateSpecialization())
 
 	staffApiGroup.GET("/requests/panel", reqHandler.GetRequestsForAdmin())
 	staffApiGroup.POST("/requests/panel/update", reqHandler.UpdateRequest())
-	staffApiGroup.GET("/requests/panel/update", reqHandler.GetLeastBusyByJobID())
+	staffApiGroup.GET("/requests/panel/update/random-assign", staffHandler.GetLeastBusyByJobID())
 	staffApiGroup.GET("/requests/panel/delete/:id", reqHandler.DeleteRequest())
 
 	staffGroup.GET("/requests/panel", pageH.AdminRequests())
+	staffGroup.GET("/users/panel", pageH.UsersManager())
 
 	r.Run(":8000")
 

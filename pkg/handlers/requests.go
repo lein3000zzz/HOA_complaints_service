@@ -5,7 +5,6 @@ import (
 	"DBPrototyping/pkg/residence"
 	"DBPrototyping/pkg/staffdata"
 	"DBPrototyping/pkg/userdata"
-	"errors"
 	"net/http"
 	"strconv"
 
@@ -135,9 +134,12 @@ func (h *RequestsHandler) GetRequestsForUser() func(c *gin.Context) {
 			return
 		}
 
-		pages := max(1, total/limit)
-		if total%limit != 0 {
-			pages++
+		pages := 1
+		if total > 0 {
+			pages = total / limit
+			if total%limit != 0 {
+				pages++
+			}
 		}
 
 		meta := gin.H{
@@ -254,32 +256,6 @@ func (h *RequestsHandler) GetRequestsForAdmin() func(c *gin.Context) {
 	}
 }
 
-func (h *RequestsHandler) GetLeastBusyByJobID() func(c *gin.Context) {
-	return func(c *gin.Context) {
-		jobIDStr := c.Query("jobID")
-
-		responseJSON := gin.H{}
-
-		staffMember, errFindMember := h.StaffRepo.FindLeastBusyByJobID(jobIDStr)
-
-		if errFindMember != nil {
-			h.Logger.Errorf("failed to find least busy by jobID: %v", errFindMember)
-			responseJSON["error"] = "failed to find least busy by jobID" + errFindMember.Error()
-
-			if errors.Is(errFindMember, staffdata.ErrStaffMemberNotFound) {
-				c.AbortWithStatusJSON(http.StatusBadRequest, responseJSON)
-				return
-			}
-
-			c.AbortWithStatusJSON(http.StatusInternalServerError, responseJSON)
-			return
-		}
-
-		responseJSON["leastBusy"] = staffMember.ID
-		c.JSON(http.StatusOK, responseJSON)
-	}
-}
-
 func (h *RequestsHandler) UpdateRequest() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		responseJSON := gin.H{}
@@ -362,6 +338,7 @@ func (h *RequestsHandler) DeleteRequest() func(c *gin.Context) {
 		if id == "" {
 			responseJSON["error"] = "invalid id"
 			h.Logger.Debugf("delete request invalid id")
+
 			c.AbortWithStatusJSON(http.StatusBadRequest, responseJSON)
 			return
 		}

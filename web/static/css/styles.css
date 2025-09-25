@@ -177,6 +177,14 @@ input:focus, select:focus, textarea:focus {
     z-index: 9999;
 }
 
+#user-modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+    backdrop-filter: none;
+    z-index: 200;
+}
+
 .cost-field {
     width:100%;
     max-width:160px;

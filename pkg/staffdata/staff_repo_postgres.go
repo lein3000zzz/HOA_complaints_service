@@ -128,9 +128,15 @@ func (repo *StaffRepoPostgres) AddStaffMemberSpecializationAssoc(staffMemberID i
 
 	if err := repo.db.WithContext(ctx).
 		Table(StaffMemberSpecializationPg{}.TableName()).
-		Clauses(clause.OnConflict{DoNothing: true}).
+		Clauses(clause.OnConflict{
+			Columns: []clause.Column{
+				{Name: "id_member"},
+				{Name: "id_specialization"},
+			},
+			DoUpdates: clause.Assignments(map[string]interface{}{"is_active": true}),
+		}).
 		Create(&mapping).Error; err != nil {
-		repo.logger.Errorf("failed to create staff-spec mapping staffMemberID=%d spec=%s: %v", staffMemberID, specializationID, err)
+		repo.logger.Errorf("failed to create/update staff-spec mapping staffMemberID=%d spec=%s: %v", staffMemberID, specializationID, err)
 		return err
 	}
 
@@ -162,17 +168,39 @@ func (repo *StaffRepoPostgres) GetStaffMemberByPhoneNumber(phoneNumber string) (
 func (repo *StaffRepoPostgres) DeleteByPhone(phoneNumber string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-
-	deleteRes := repo.db.WithContext(ctx).Where("phone_number = ?", phoneNumber).Delete(&StaffMember{})
-
-	if deleteRes.Error != nil {
-		repo.logger.Errorf("failed to delete staff member: %s", deleteRes.Error)
-		return deleteRes.Error
+	
+	var member StaffMemberPg
+	if err := repo.db.WithContext(ctx).Where("phone_number = ?", phoneNumber).First(&member).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			repo.logger.Debugf("staff member not found: %s", phoneNumber)
+			return ErrStaffMemberNotFound
+		}
+		repo.logger.Errorf("failed to query staff member: %v", err)
+		return err
 	}
 
-	if deleteRes.RowsAffected != 1 {
-		repo.logger.Warnf("failed to delete staff member, no such phone %s: %v", phoneNumber, deleteRes.RowsAffected)
-		return ErrStaffMemberNotFound
+	err := repo.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		mappingTable := StaffMemberSpecializationPg{}.TableName()
+		if del := tx.Table(mappingTable).Where("id_member = ?", member.ID).Delete(&StaffMemberSpecializationPg{}); del.Error != nil {
+			repo.logger.Errorf("failed to delete staff-member specializations for member %d: %v", member.ID, del.Error)
+			return del.Error
+		}
+
+		deleteRes := tx.Where("id = ?", member.ID).Delete(&StaffMember{})
+		if deleteRes.Error != nil {
+			repo.logger.Errorf("failed to delete staff member: %v", deleteRes.Error)
+			return deleteRes.Error
+		}
+		if deleteRes.RowsAffected != 1 {
+			repo.logger.Warnf("failed to delete staff member, no such id %d: %v", member.ID, deleteRes.RowsAffected)
+			return ErrStaffMemberNotFound
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -211,4 +239,56 @@ func (repo *StaffRepoPostgres) FindLeastBusyByJobID(jobID string) (*StaffMember,
 
 	staff := StaffMember(staffPg)
 	return &staff, nil
+}
+
+func (repo *StaffRepoPostgres) FindCurrentSpecializations(staffMemberID int) ([]*Specialization, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var specsPg []SpecializationPg
+
+	assocTable := StaffMemberSpecializationPg{}.TableName()
+	specTable := SpecializationPg{}.TableName()
+
+	query := repo.db.WithContext(ctx).
+		Table(specTable+" AS spec").
+		Select("spec.*").
+		Joins("JOIN "+assocTable+" AS assoc ON assoc.id_specialization = spec.id").
+		Where("assoc.id_member = ? AND assoc.is_active = ?", staffMemberID, true)
+
+	if err := query.Find(&specsPg).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		repo.logger.Errorf("failed to query specializations for member %d: %v", staffMemberID, err)
+		return nil, err
+	}
+
+	result := make([]*Specialization, 0, len(specsPg))
+	for _, s := range specsPg {
+		result = append(result, (*Specialization)(&s))
+	}
+
+	return result, nil
+}
+
+func (repo *StaffRepoPostgres) DeactivateStaffMemberSpecialization(staffMemberID int, jobID string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	table := StaffMemberSpecializationPg{}.TableName()
+	updateRes := repo.db.WithContext(ctx).
+		Table(table).
+		Where("id_member = ? AND id_specialization = ? AND is_active = ?", staffMemberID, jobID, true).
+		Update("is_active", false)
+
+	if updateRes.Error != nil {
+		repo.logger.Errorf("failed to deactivate staff-spec mapping staffMemberID=%d spec=%s: %v", staffMemberID, jobID, updateRes.Error)
+		return updateRes.Error
+	}
+
+	if updateRes.RowsAffected != 1 {
+		repo.logger.Warnf("no active staff-spec mapping found to deactivate staffMemberID=%d spec=%s", staffMemberID, jobID)
+		return ErrStaffMemberNotFound
+	}
+
+	repo.logger.Infof("deactivated specialization %s for member %d", jobID, staffMemberID)
+	return nil
 }
