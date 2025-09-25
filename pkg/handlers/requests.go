@@ -279,3 +279,101 @@ func (h *RequestsHandler) GetLeastBusyByJobID() func(c *gin.Context) {
 		c.JSON(http.StatusOK, responseJSON)
 	}
 }
+
+func (h *RequestsHandler) UpdateRequest() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		responseJSON := gin.H{}
+
+		id := c.PostForm("id")
+		residentID := c.PostForm("residentID")
+		houseIDStr := c.PostForm("houseID")
+		houseID, errConvertHouse := strconv.Atoi(houseIDStr)
+		reqType := requests.RequestType(c.PostForm("type"))
+		complaint := c.PostForm("complaint")
+		costStr := c.PostForm("cost")
+		reqStatus := requests.RequestStatus(c.PostForm("status"))
+		respIDStr := c.PostForm("respID")
+		organizationIDStr := c.PostForm("organizationID")
+
+		if id == "" || residentID == "" || errConvertHouse != nil || !reqType.IsValid() || !reqStatus.IsValid() {
+			responseJSON["error"] = "invalid request"
+			h.Logger.Debugf("ignore invalid request")
+			c.AbortWithStatusJSON(http.StatusBadRequest, responseJSON)
+			return
+		}
+
+		requestUpdates := requests.Request{
+			ID:          id,
+			ResidentID:  residentID,
+			Complaint:   complaint,
+			HouseID:     houseID,
+			RequestType: reqType,
+			Status:      reqStatus,
+		}
+
+		if costStr != "" {
+			if costVal, err := strconv.ParseFloat(costStr, 64); err == nil {
+				requestUpdates.Cost = &costVal
+			} else {
+				responseJSON["error"] = "invalid cost"
+				h.Logger.Debugf("invalid cost provided: %s", costStr)
+				c.AbortWithStatusJSON(http.StatusBadRequest, responseJSON)
+				return
+			}
+		}
+
+		if respIDStr != "" {
+			if respID, err := strconv.Atoi(respIDStr); err == nil {
+				requestUpdates.ResponsibleID = &respID
+			} else {
+				responseJSON["error"] = "invalid responsible ID"
+				h.Logger.Debugf("invalid respID provided: %s", respIDStr)
+
+				c.AbortWithStatusJSON(http.StatusBadRequest, responseJSON)
+				return
+			}
+		}
+
+		if organizationIDStr != "" {
+			requestUpdates.OrganizationID = &organizationIDStr
+		}
+
+		h.Logger.Infof("update request payload: %v", requestUpdates)
+
+		errUpdating := h.RequestsRepo.UpdateRequest(&requestUpdates)
+
+		if errUpdating != nil {
+			h.Logger.Errorf("failed to update request: %v", errUpdating)
+			responseJSON["error"] = "failed to update request"
+			c.AbortWithStatusJSON(http.StatusInternalServerError, responseJSON)
+			return
+		}
+
+		responseJSON["message"] = requestUpdates.ResponsibleID
+		c.JSON(http.StatusOK, responseJSON)
+	}
+}
+
+func (h *RequestsHandler) DeleteRequest() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		responseJSON := gin.H{}
+
+		id := c.Param("id")
+		if id == "" {
+			responseJSON["error"] = "invalid id"
+			h.Logger.Debugf("delete request invalid id")
+			c.AbortWithStatusJSON(http.StatusBadRequest, responseJSON)
+			return
+		}
+
+		if err := h.RequestsRepo.DeleteByID(id); err != nil {
+			h.Logger.Errorf("failed to delete request: %v", err)
+			responseJSON["error"] = "failed to delete request"
+			c.AbortWithStatusJSON(http.StatusInternalServerError, responseJSON)
+			return
+		}
+
+		responseJSON["message"] = "deleted " + id
+		c.JSON(http.StatusOK, responseJSON)
+	}
+}

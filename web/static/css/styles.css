@@ -168,6 +168,35 @@ input:focus, select:focus, textarea:focus {
     font-weight:600;
 }
 
+#edit-modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+    backdrop-filter: blur(6px);
+    z-index: 9999;
+}
+
+.cost-field {
+    width:100%;
+    max-width:160px;
+    padding:8px 10px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+    color:var(--text);
+    font-weight:700;
+    text-align:right;
+    outline:none;
+    transition: box-shadow .15s ease, border-color .12s ease, transform .08s ease;
+}
+
+.cost-field:focus {
+    border-color: var(--focus);
+    box-shadow: 0 6px 18px rgba(96,165,250,0.06);
+    transform: translateY(-1px);
+}
+
 .id-label {
     display:block;
     font-size:13px;

@@ -174,7 +174,11 @@ func main() {
 
 	staffApiGroup.GET("/users/delete/:phoneNumber", userHandler.DeleteUser())
 	staffApiGroup.GET("/users/list", userHandler.GetAllUsers())
+
 	staffApiGroup.GET("/requests/panel", reqHandler.GetRequestsForAdmin())
+	staffApiGroup.POST("/requests/panel/update", reqHandler.UpdateRequest())
+	staffApiGroup.GET("/requests/panel/update", reqHandler.GetLeastBusyByJobID())
+	staffApiGroup.GET("/requests/panel/delete/:id", reqHandler.DeleteRequest())
 
 	staffGroup.GET("/requests/panel", pageH.AdminRequests())
 

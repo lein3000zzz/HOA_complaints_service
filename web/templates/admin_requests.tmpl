@@ -77,6 +77,78 @@
             <button id="apply-filters" class="btn">Apply</button>
         </div>
 
+        <div id="edit-modal" class="card hidden" style="position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); z-index:200; width:90%; max-width:720px;">
+            <h2 class="card-title">Edit request</h2>
+            <form id="edit-form" class="form" data-endpoint="/api/staff/requests/panel/update">
+                <label>ID (readonly): <input id="edit-id" name="id" type="text" readonly></label>
+                <label>Resident ID: <input id="edit-residentID" name="residentID" type="text" readonly></label>
+
+                <div class="form-row inline" style="gap:12px; align-items:flex-end;">
+                    <label style="flex:1;">
+                        House ID:
+                        <input id="edit-houseID" name="houseID" type="number" min="1" inputmode="numeric" pattern="\d*" class="id-field" placeholder="e.g. 123" required>
+                        <small class="field-hint">Numeric house identifier</small>
+                    </label>
+
+                    <label>
+                        Cost:
+                        <input id="edit-cost" name="cost" type="number" step="0.01" min="0" inputmode="decimal" class="cost-field" placeholder="0.00">
+                        <small class="field-hint">Enter cost in your currency (optional)</small>
+                    </label>
+
+                    <label style="min-width:0;">
+                        Responsible ID:
+                        <input id="edit-responsibleID" name="respID" type="number" min="1" inputmode="numeric" pattern="\d*" class="id-field" placeholder="numeric id">
+                        <small class="field-hint">Staff member numeric id (optional)</small>
+                    </label>
+                </div>
+
+                <label>Type:
+                    <select id="edit-type" name="type" required>
+                        <option value="ремонт_внутриквартирный">ремонт_внутриквартирный</option>
+                        <option value="ремонт_общедомового_имущества">ремонт_общедомового_имущества</option>
+                    </select>
+                </label>
+                <label>Complaint: <textarea id="edit-complaint" name="complaint" rows="4"></textarea></label>
+
+                <label>Status:
+                    <select id="edit-status" name="status" required>
+                        <option value="создана">создана</option>
+                        <option value="назначена_исполнителю">назначена_исполнителю</option>
+                        <option value="выполнена">выполнена</option>
+                        <option value="отменена">отменена</option>
+                        <option value="приостановлена">приостановлена</option>
+                        <option value="передана_организации">передана_организации</option>
+                    </select>
+                </label>
+
+                <div id="organization-block" class="form-row hidden" style="margin-top:8px;">
+                    <label style="flex:1;">
+                        Organization ID:
+                        <input id="edit-organizationID" name="organizationID" type="text" placeholder="organization id">
+                        <small class="field-hint">Required when status = передана_организации</small>
+                    </label>
+                </div>
+
+                <div id="responsible-block" class="form-row inline">
+                    <button type="button" id="add-job-lookup" class="btn">Add job lookup</button>
+                </div>
+
+                <div id="job-lookup-container" class="form-row hidden" style="margin-top:8px;">
+                    <label>Job ID <input id="job-id-input" type="text" placeholder="job id"></label>
+                    <button type="button" id="job-lookup-btn" class="btn">Find</button>
+                    <small id="job-lookup-hint" class="field-hint">Find least busy staff by job id</small>
+                </div>
+
+                <div class="form-row inline" style="margin-top:8px;">
+                    <button id="edit-save" type="submit" class="btn">Save</button>
+                    <button id="edit-cancel" type="button" class="btn">Cancel</button>
+                </div>
+
+                <output id="edit-output" class="form-output" aria-live="polite"></output>
+            </form>
+        </div>
+
         <div id="requests-list" style="margin-top:16px;"></div>
 
         <div id="pagination" class="form-row center" style="margin-top:12px; gap:8px;">
