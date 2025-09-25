@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const out = document.getElementById("users-output");
     const currentPageEl = document.getElementById("current-page");
     const totalPagesEl = document.getElementById("total-pages");
+    const totalCountEl = document.getElementById("total-count");
 
     const prevBtn = document.getElementById("prev-page");
     const nextBtn = document.getElementById("next-page");
@@ -56,12 +57,13 @@ document.addEventListener("DOMContentLoaded", () => {
         clearList();
         const phones = data.phones || [];
         const meta = data.meta || {};
-        const total = (typeof meta.total === 'number') ? meta.total : 0;
+        const total = Number(meta.total) || 0;
         const pageFromMeta = (meta.page && typeof meta.page === 'number') ? meta.page : page;
         const pages = (meta.pages && typeof meta.pages === 'number') ? meta.pages : Math.max(1, Math.ceil(total / limit));
         lastPages = pages;
         page = pageFromMeta;
 
+        if (totalCountEl) totalCountEl.textContent = String(total);
         if (out) { out.className = 'form-output'; out.textContent = ''; }
         if (!phones.length) {
             if (out) out.textContent = 'No users found';
