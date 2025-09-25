@@ -1,3 +1,5 @@
+"use strict"
+
 document.addEventListener('DOMContentLoaded', function () {
     const list = document.getElementById('requests-list');
     const out = document.getElementById('requests-output');

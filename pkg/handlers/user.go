@@ -8,6 +8,7 @@ import (
 	"DBPrototyping/pkg/utils"
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -238,18 +239,46 @@ func (h *UserHandler) DeleteUser() func(c *gin.Context) {
 
 func (h *UserHandler) GetAllUsers() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		users, errGetUsers := h.UserRepo.GetAll()
+		page := 1
+		limit := 10
 
-		responseJSON := gin.H{}
-
-		if errGetUsers != nil {
-			h.Logger.Errorf("get users error: %s", errGetUsers.Error())
-			responseJSON["error"] = errGetUsers.Error()
-			c.JSON(http.StatusInternalServerError, responseJSON)
+		if p := c.Query("page"); p != "" {
+			if v, err := strconv.Atoi(p); err == nil && v > 0 {
+				page = v
+			}
+		}
+		if l := c.Query("limit"); l != "" {
+			if v, err := strconv.Atoi(l); err == nil && v > 0 && v <= 1000 {
+				limit = v
+			}
 		}
 
-		responseJSON["users"] = users
-		c.JSON(http.StatusOK, responseJSON)
+		offset := (page - 1) * limit
+
+		users, total, err := h.UserRepo.GetAll(limit, offset)
+		if err != nil {
+			h.Logger.Errorf("get users error: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get users"})
+			return
+		}
+
+		pages := 1
+		if total > 0 {
+			pages = total / limit
+			if total%limit != 0 {
+				pages++
+			}
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"users": users,
+			"meta": gin.H{
+				"total": total,
+				"page":  page,
+				"limit": limit,
+				"pages": pages,
+			},
+		})
 	}
 }
 

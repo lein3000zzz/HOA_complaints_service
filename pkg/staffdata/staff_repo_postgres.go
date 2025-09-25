@@ -1,6 +1,7 @@
 package staffdata
 
 import (
+	"DBPrototyping/pkg/requests"
 	"DBPrototyping/pkg/utils"
 	"context"
 	"errors"
@@ -175,4 +176,39 @@ func (repo *StaffRepoPostgres) DeleteByPhone(phoneNumber string) error {
 	}
 
 	return nil
+}
+
+func (repo *StaffRepoPostgres) FindLeastBusyByJobID(jobID string) (*StaffMember, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var staffPg StaffMemberPg
+
+	staffTable := StaffMemberPg{}.TableName()
+	specAssocTable := StaffMemberSpecializationPg{}.TableName()
+	reqTable := requests.RequestPg{}.TableName()
+
+	query := repo.db.WithContext(ctx).
+		Table(staffTable+" AS staff").
+		Select("staff.*, COALESCE(COUNT(req.id), 0) AS active_count").
+		Joins("JOIN "+specAssocTable+" AS staffspec ON staffspec.id_member = staff.id").
+		Joins("LEFT JOIN "+reqTable+" AS req ON req.id_responsible = staff.id AND req.status = ?", string(requests.StatusAssigned)).
+		Where("staffspec.id_specialization = ?", jobID).
+		Group("staff.id").
+		Order("active_count ASC").
+		Limit(1)
+
+	if err := query.Scan(&staffPg).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrStaffMemberNotFound
+		}
+		return nil, err
+	}
+
+	if staffPg.ID == 0 {
+		return nil, ErrStaffMemberNotFound
+	}
+
+	staff := StaffMember(staffPg)
+	return &staff, nil
 }

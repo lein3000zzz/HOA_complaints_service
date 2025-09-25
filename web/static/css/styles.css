@@ -129,3 +129,48 @@ input:focus, select:focus, textarea:focus {
 
 .hidden { display:none !important; }
 .center { display:flex; align-items:center; justify-content:center; }
+
+.id-group { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; }
+.id-group .form-row { margin:0; min-width:0; flex:1 0 140px; }
+
+.id-field {
+    width:100%;
+    max-width:160px;
+    padding:8px 10px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+    color:var(--text);
+    font-weight:700;
+    text-align:center;
+    outline:none;
+    transition: box-shadow .15s ease, border-color .12s ease, transform .08s ease;
+    -moz-appearance: textfield;
+}
+
+.id-field::-webkit-outer-spin-button,
+.id-field::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.id-field:focus {
+    border-color: var(--focus);
+    box-shadow: 0 6px 18px rgba(96,165,250,0.06);
+    transform: translateY(-1px);
+}
+
+.field-hint {
+    display:block;
+    margin-top:6px;
+    font-size:12px;
+    color:var(--muted);
+    font-weight:600;
+}
+
+.id-label {
+    display:block;
+    font-size:13px;
+    color:var(--muted);
+    margin-bottom:6px;
+}

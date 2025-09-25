@@ -103,7 +103,7 @@ func main() {
 
 	residentsRepo := residence.NewResidentPgRepo(logger, db)
 	staffRepo := staffdata.NewStaffRepoPostgres(logger, db)
-	reqRepo := requests.NewRequestPgRepo(logger, db, staffRepo, residentsRepo)
+	reqRepo := requests.NewRequestPgRepo(logger, db)
 
 	sm := &session.GinSessionManager{
 		Logger: logger,
@@ -172,8 +172,11 @@ func main() {
 	staffGroup.GET("/register", pageH.RegisterPage())
 	staffGroup.GET("/admin-panel", pageH.AdminPage())
 
-	staffApiGroup.GET("/user/delete/:phoneNumber", userHandler.DeleteUser())
-	staffApiGroup.GET("/user/list", userHandler.GetAllUsers())
+	staffApiGroup.GET("/users/delete/:phoneNumber", userHandler.DeleteUser())
+	staffApiGroup.GET("/users/list", userHandler.GetAllUsers())
+	staffApiGroup.GET("/requests/panel", reqHandler.GetRequestsForAdmin())
+
+	staffGroup.GET("/requests/panel", pageH.AdminRequests())
 
 	r.Run(":8000")
 

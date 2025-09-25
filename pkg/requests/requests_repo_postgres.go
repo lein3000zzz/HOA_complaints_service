@@ -2,7 +2,6 @@ package requests
 
 import (
 	"DBPrototyping/pkg/residence"
-	"DBPrototyping/pkg/staffdata"
 	"DBPrototyping/pkg/utils"
 	"context"
 	"errors"
@@ -28,18 +27,14 @@ var (
 )
 
 type RequestPgRepo struct {
-	logger              *zap.SugaredLogger
-	db                  *gorm.DB
-	staffController     staffdata.StaffRepo
-	residentsController residence.ResidentsController
+	logger *zap.SugaredLogger
+	db     *gorm.DB
 }
 
-func NewRequestPgRepo(logger *zap.SugaredLogger, db *gorm.DB, staffRepo staffdata.StaffRepo, residentsRepo residence.ResidentsController) *RequestPgRepo {
+func NewRequestPgRepo(logger *zap.SugaredLogger, db *gorm.DB) *RequestPgRepo {
 	return &RequestPgRepo{
-		logger:              logger,
-		db:                  db,
-		staffController:     staffRepo,
-		residentsController: residentsRepo,
+		logger: logger,
+		db:     db,
 	}
 }
 
@@ -149,26 +144,6 @@ func (repo *RequestPgRepo) GetResidentRequestsByPhone(phoneNumber string, limit,
 	return requests, int(total), nil
 }
 
-//func (repo *RequestPgRepo) GetAll() ([]*Request, error) {
-//	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-//	defer cancel()
-//
-//	var requestsPg []*RequestPg
-//	queryRes := repo.db.WithContext(ctx).Find(&requestsPg)
-//
-//	if queryRes.Error != nil {
-//		repo.logger.Errorf("error getting all requests, %v", queryRes.Error)
-//		return nil, queryRes.Error
-//	}
-//
-//	requests := make([]*Request, len(requestsPg))
-//	for i, requestPg := range requestsPg {
-//		requests[i] = (*Request)(requestPg)
-//	}
-//
-//	return requests, nil
-//}
-
 func (repo *RequestPgRepo) GetByFilter(filter RequestFilter) ([]*Request, int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -178,6 +153,9 @@ func (repo *RequestPgRepo) GetByFilter(filter RequestFilter) ([]*Request, int, e
 	reqTable := RequestPg{}.TableName()
 	query := repo.db.WithContext(ctx).Table(reqTable + " AS req").Model(&RequestPg{})
 
+	if filter.ID != nil {
+		query = query.Where("req.ID LIKE ?", "%"+*filter.ID+"%")
+	}
 	if filter.Status != nil {
 		query = query.Where("req.status = ?", string(*filter.Status))
 	}
@@ -185,7 +163,7 @@ func (repo *RequestPgRepo) GetByFilter(filter RequestFilter) ([]*Request, int, e
 		query = query.Where("req.type = ?", string(*filter.RequestType))
 	}
 	if filter.ResidentID != nil {
-		query = query.Where("req.id_resident = ?", *filter.ResidentID)
+		query = query.Where("req.id_resident LIKE ?", "%"+*filter.ResidentID+"%")
 	}
 	if filter.HouseID != nil {
 		query = query.Where("req.id_house = ?", *filter.HouseID)
@@ -194,7 +172,10 @@ func (repo *RequestPgRepo) GetByFilter(filter RequestFilter) ([]*Request, int, e
 		query = query.Where("req.id_responsible = ?", *filter.ResponsibleID)
 	}
 	if filter.OrganizationID != nil {
-		query = query.Where("req.id_organization = ?", *filter.OrganizationID)
+		query = query.Where("req.id_organization LIKE ?", "%"+*filter.OrganizationID+"%")
+	}
+	if filter.Complaint != nil {
+		query = query.Where("req.complaint LIKE ?", "%"+*filter.Complaint+"%")
 	}
 
 	var total int64
@@ -243,6 +224,35 @@ func (repo *RequestPgRepo) GetByFilter(filter RequestFilter) ([]*Request, int, e
 	return requests, int(total), nil
 }
 
-//func (repo *RequestPgRepo) ChooseResponsibleByJobTitle(jobTitle string) {
-//
-//}
+func (repo *RequestPgRepo) DeleteByID(id string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	res := repo.db.WithContext(ctx).Where("id = ?", id).Delete(&RequestPg{})
+	if res.Error != nil {
+		repo.logger.Warnf("failed to delete request id %s: %v", id, res.Error)
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return ErrNoRequestsFound
+	}
+
+	return nil
+}
+
+func (repo *RequestPgRepo) UpdateRequest(updatedRequest *Request) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	requestPg := RequestPg(*updatedRequest)
+	res := repo.db.WithContext(ctx).Model(&RequestPg{}).Where("id = ?", updatedRequest.ID).Updates(requestPg)
+	if res.Error != nil {
+		repo.logger.Warnf("failed to update request id %s: %v", updatedRequest.ID, res.Error)
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return ErrNoRequestsFound
+	}
+
+	return nil
+}

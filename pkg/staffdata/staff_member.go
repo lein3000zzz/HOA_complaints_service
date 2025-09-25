@@ -30,6 +30,7 @@ type StaffRepo interface {
 	RegisterNewSpecialization(jobTitle string) (*Specialization, error)
 	GetStaffMemberByPhoneNumber(phoneNumber string) (*StaffMember, error)
 	DeleteByPhone(phoneNumber string) error
+	FindLeastBusyByJobID(jobID string) (*StaffMember, error)
 }
 
 type StaffMemberStatus string

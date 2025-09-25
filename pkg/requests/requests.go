@@ -21,7 +21,6 @@ type RequestFilter struct {
 	HouseID        *int
 	RequestType    *RequestType
 	Complaint      *string
-	Cost           *float64
 	Status         *RequestStatus
 	ResponsibleID  *int
 	OrganizationID *string
@@ -42,10 +41,9 @@ type InitialRequestData struct {
 type RequestRepo interface {
 	CreateRequest(requestData InitialRequestData) (*Request, error)
 	GetResidentRequestsByPhone(phoneNumber string, limit, offset int, sort string) ([]*Request, int, error)
-	GetAll(limit, offset int, sort string) ([]*Request, int, error)
+	DeleteByID(id string) error
+	UpdateRequest(updatedRequest *Request) error
 	GetByFilter(filter RequestFilter) ([]*Request, int, error)
-	//UpdateRequest(request Request) error
-	//SelectResponsible(request Request)
 }
 
 type RequestType string

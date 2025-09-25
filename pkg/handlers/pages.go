@@ -24,6 +24,7 @@ func (h *PageHandler) InitHTML() {
 		"create_request.tmpl",
 		"my_requests.tmpl",
 		"admin.tmpl",
+		"admin_requests.tmpl",
 	}
 
 	h.Templates = make(map[string]*template.Template)
@@ -68,6 +69,26 @@ func (h *PageHandler) MainPage() gin.HandlerFunc {
 		}
 
 		h.respondWithHTML(c, "main.tmpl", data)
+	}
+}
+
+func (h *PageHandler) AdminRequests() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		phoneVal, exists := c.Get("phoneNumber")
+
+		if !exists {
+			c.Redirect(http.StatusSeeOther, "/login")
+		}
+
+		roleVal, _ := c.Get("role")
+
+		data := gin.H{
+			"title":       "admin requests",
+			"role":        roleVal,
+			"phoneNumber": phoneVal,
+		}
+
+		h.respondWithHTML(c, "admin_requests.tmpl", data)
 	}
 }
 
