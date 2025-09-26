@@ -214,3 +214,36 @@ func (h *ResidentsHandler) GetResidentPhoneNumberByID() func(c *gin.Context) {
 		c.JSON(http.StatusOK, responseJSON)
 	}
 }
+
+func (h *ResidentsHandler) UpdateHouseAddress() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		responseJSON := gin.H{}
+
+		houseIDStr := c.PostForm("houseID")
+		address := c.PostForm("address")
+
+		houseID, errConv := strconv.Atoi(houseIDStr)
+		if houseIDStr == "" || address == "" || errConv != nil {
+			responseJSON["error"] = "invalid data provided"
+			h.Logger.Debugf("invalid data provided houseID=%s address=%s err=%v", houseIDStr, address, errConv)
+
+			c.AbortWithStatusJSON(http.StatusBadRequest, responseJSON)
+			return
+		}
+
+		if err := h.ResidentsRepo.UpdateHouseAddress(houseID, address); err != nil {
+			h.Logger.Errorf("failed to update house address: %v", err)
+			responseJSON["error"] = "failed to update house address: " + err.Error()
+
+			if errors.Is(err, residence.ErrNoHouseFound) {
+				c.AbortWithStatusJSON(http.StatusBadRequest, responseJSON)
+			} else {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, responseJSON)
+			}
+			return
+		}
+
+		responseJSON["message"] = "success"
+		c.JSON(http.StatusOK, responseJSON)
+	}
+}

@@ -41,6 +41,19 @@
             </form>
         </div>
 
+        <div id="update-house-modal" class="card hidden" style="position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); z-index:200; width:90%; max-width:720px;">
+            <h2 class="card-title">Update house</h2>
+            <form id="update-house-form" class="form" data-endpoint="/api/staff/users/resident/update-house">
+                <label>House ID: <input id="update-house-id" name="houseID" type="number" readonly></label>
+                <label>Address: <input id="update-house-address" name="address" type="text" required></label>
+                <div class="form-row inline" style="margin-top:8px;">
+                    <button id="update-house-save" type="submit" class="btn">Save</button>
+                    <button id="update-house-cancel" type="button" class="btn">Cancel</button>
+                </div>
+                <output id="update-house-output" class="form-output" aria-live="polite"></output>
+            </form>
+        </div>
+
         <div style="margin-top:12px;">
             <button id="add-house" class="btn">Add house</button>
         </div>

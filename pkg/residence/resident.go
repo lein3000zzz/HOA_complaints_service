@@ -29,4 +29,5 @@ type ResidentsController interface {
 	DeleteResidentHouse(residentID string, houseID int) error
 	GetHouses(pattern string, limit, offset int) ([]*House, int, error)
 	GetResidentByID(residentID string) (*Resident, error)
+	UpdateHouseAddress(houseID int, updatedAddress string) error
 }

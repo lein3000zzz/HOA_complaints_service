@@ -36,6 +36,7 @@ var (
 	ErrRegisterResidentFailed = errors.New("register resident fail")
 	ErrResidentNotFound       = errors.New("resident not found")
 	ErrHouseExists            = errors.New("house already exists")
+	ErrNoHouseFound           = errors.New("house not found")
 	ErrAddingResidentAddress  = errors.New("error adding residential address")
 )
 
@@ -327,4 +328,22 @@ func (repo *ResidentPgRepo) GetResidentByID(residentID string) (*Resident, error
 
 	resident := Resident(residentPg)
 	return &resident, nil
+}
+
+func (repo *ResidentPgRepo) UpdateHouseAddress(houseID int, updatedAddress string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	updateRes := repo.db.WithContext(ctx).Model(&HousePg{}).Where("id = ?", houseID).Update("address", updatedAddress)
+	if updateRes.Error != nil {
+		repo.logger.Errorf("failed to update house %d address: %v", houseID, updateRes.Error)
+		return updateRes.Error
+	}
+	if updateRes.RowsAffected != 1 {
+		repo.logger.Debugf("no house found to update id=%d", houseID)
+		return ErrNoHouseFound
+	}
+
+	repo.logger.Infof("updated address for house %d", houseID)
+	return nil
 }

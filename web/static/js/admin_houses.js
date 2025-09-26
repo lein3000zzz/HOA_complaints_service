@@ -25,19 +25,29 @@ document.addEventListener("DOMContentLoaded", () => {
     const addHouseOutput = document.getElementById("add-house-output");
     const addHouseCancel = document.getElementById("add-house-cancel");
 
-    const toggleModal = (show) => {
+    const updateHouseModal = document.getElementById("update-house-modal");
+    const updateHouseForm = document.getElementById("update-house-form");
+    const updateHouseId = document.getElementById("update-house-id");
+    const updateHouseAddress = document.getElementById("update-house-address");
+    const updateHouseCancel = document.getElementById("update-house-cancel");
+    const updateHouseOutput = document.getElementById("update-house-output");
+
+    const toggleAddModal = (show) => {
         if (!addHouseModal) return;
         if (show) addHouseModal.classList.remove("hidden");
         else addHouseModal.classList.add("hidden");
         window.scrollTo(0, 0);
     };
 
-    if (addHouseBtn) {
-        addHouseBtn.addEventListener("click", () => toggleModal(true));
-    }
-    if (addHouseCancel) {
-        addHouseCancel.addEventListener("click", (e) => { e.preventDefault(); toggleModal(false); });
-    }
+    const toggleUpdateModal = (show) => {
+        if (!updateHouseModal) return;
+        if (show) updateHouseModal.classList.remove("hidden");
+        else updateHouseModal.classList.add("hidden");
+        window.scrollTo(0, 0);
+    };
+
+    if (addHouseBtn) addHouseBtn.addEventListener("click", () => toggleAddModal(true));
+    if (addHouseCancel) addHouseCancel.addEventListener("click", (e) => { e.preventDefault(); toggleAddModal(false); });
 
     if (addHouseForm) {
         addHouseForm.addEventListener("submit", async (e) => {
@@ -61,10 +71,44 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 if (addHouseOutput) { addHouseOutput.textContent = 'Created'; addHouseOutput.className = 'form-output success'; }
-                toggleModal(false);
+                toggleAddModal(false);
                 if (typeof load === 'function') load();
-            } catch (err) {
+            } catch {
                 if (addHouseOutput) { addHouseOutput.textContent = 'Network error'; addHouseOutput.className = 'form-output error'; }
+            }
+        });
+    }
+
+    if (updateHouseCancel) {
+        updateHouseCancel.addEventListener("click", (e) => { e.preventDefault(); toggleUpdateModal(false); });
+    }
+
+    if (updateHouseForm) {
+        updateHouseForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            if (updateHouseOutput) { updateHouseOutput.textContent = "Saving..."; updateHouseOutput.className = "form-output"; }
+
+            const formData = new FormData(updateHouseForm);
+            try {
+                const res = await fetch(updateHouseForm.dataset.endpoint || '/api/staff/users/resident/update-house', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin'
+                });
+                const text = await res.text();
+                let data;
+                try { data = JSON.parse(text || '{}'); } catch { data = { raw: text }; }
+
+                if (!res.ok) {
+                    if (updateHouseOutput) { updateHouseOutput.textContent = data.error || data.raw || ('HTTP ' + res.status); updateHouseOutput.className = 'form-output error'; }
+                    return;
+                }
+
+                if (updateHouseOutput) { updateHouseOutput.textContent = 'Updated'; updateHouseOutput.className = 'form-output success'; }
+                toggleUpdateModal(false);
+                if (typeof load === 'function') load();
+            } catch {
+                if (updateHouseOutput) { updateHouseOutput.textContent = 'Network error'; updateHouseOutput.className = 'form-output error'; }
             }
         });
     }
@@ -175,7 +219,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     await copyToClipboard(idText);
                     copyBtn.textContent = "Copied";
                     if (out) { out.textContent = "ID copied to clipboard"; out.className = "form-output success"; }
-                } catch (err) {
+                } catch {
                     copyBtn.textContent = "Failed";
                     if (out) { out.textContent = "Copy failed"; out.className = "form-output error"; }
                 } finally {
@@ -203,7 +247,24 @@ document.addEventListener("DOMContentLoaded", () => {
             info.appendChild(document.createElement("br"));
             info.appendChild(addrRow);
 
+            const actions = document.createElement("div");
+            actions.className = "form-row";
+            actions.style.marginTop = "8px";
+            const editBtn = document.createElement("button");
+            editBtn.className = "btn";
+            editBtn.type = "button";
+            editBtn.textContent = "Edit address";
+            editBtn.addEventListener("click", () => {
+                if (updateHouseId) updateHouseId.value = idText;
+                if (updateHouseAddress) updateHouseAddress.value = addressText;
+                if (updateHouseOutput) { updateHouseOutput.textContent = ""; updateHouseOutput.className = "form-output"; }
+                toggleUpdateModal(true);
+            });
+
+            actions.appendChild(editBtn);
+
             card.appendChild(info);
+            card.appendChild(actions);
             list.appendChild(card);
         });
     };
