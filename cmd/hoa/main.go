@@ -145,8 +145,10 @@ func main() {
 
 	staffApiGroup.GET("/users/resident/info", resHandler.GetHousesForResident())
 	staffApiGroup.GET("/users/resident/remove-house", resHandler.DeleteHouseForResident())
+	staffApiGroup.POST("/users/resident/add-house", resHandler.AddResidentHouse())
 	staffApiGroup.GET("/users/staff/info", staffHandler.GetSpecializationsForStaffMember())
 	staffApiGroup.GET("/users/staff/delete-spec", staffHandler.DeactivateSpecialization())
+	staffApiGroup.POST("/users/staff/add-specialization", staffHandler.AddStaffSpecialization())
 
 	staffApiGroup.GET("/specializations/list", staffHandler.GetAllSpecs())
 	staffApiGroup.POST("/specializations/create", staffHandler.CreateSpecialization())

@@ -184,3 +184,40 @@ func (h *StaffHandler) CreateSpecialization() func(c *gin.Context) {
 		c.JSON(http.StatusOK, spec)
 	}
 }
+
+func (h *StaffHandler) AddStaffSpecialization() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		responseJSON := gin.H{}
+
+		staffMemberIDStr := c.Query("staffMemberID")
+		specializationID := c.PostForm("specializationID")
+
+		if staffMemberIDStr == "" || specializationID == "" {
+			responseJSON["error"] = "staffMemberID and specializationID are required"
+			h.Logger.Infof("add staff specialization missing fields: staffMemberID=%s spec=%s", staffMemberIDStr, specializationID)
+
+			c.AbortWithStatusJSON(http.StatusBadRequest, responseJSON)
+			return
+		}
+
+		staffMemberID, err := strconv.Atoi(staffMemberIDStr)
+		if err != nil {
+			h.Logger.Errorf("failed to convert staffMemberID to int: %v", err)
+			responseJSON["error"] = "failed to convert staffMemberID to int: " + err.Error()
+
+			c.AbortWithStatusJSON(http.StatusBadRequest, responseJSON)
+			return
+		}
+
+		if err := h.StaffRepo.AddStaffMemberSpecializationAssoc(staffMemberID, specializationID); err != nil {
+			h.Logger.Errorf("failed to add staff specialization: %v", err)
+			responseJSON["error"] = "failed to add staff specialization: " + err.Error()
+
+			c.AbortWithStatusJSON(http.StatusInternalServerError, responseJSON)
+			return
+		}
+
+		responseJSON["message"] = "success"
+		c.JSON(http.StatusOK, responseJSON)
+	}
+}

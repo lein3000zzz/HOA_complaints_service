@@ -34,7 +34,6 @@
         </div>
     </section>
 
-    <!-- Modal -->
     <div id="user-modal" class="card hidden" style="position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); z-index:200; width:90%; max-width:720px;">
         <h2 class="card-title">User details</h2>
 
@@ -49,9 +48,10 @@
                 <div><strong>Phone:</strong> <span id="res-phone">—</span></div>
                 <div><strong>Full name:</strong> <span id="res-fullname">—</span></div>
 
-                <div style="margin-top:8px;">
+                <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
                     <button id="btn-get-houses" class="btn">Get houses</button>
-                    <div id="houses-list" style="margin-top:8px;"></div>
+                    <button id="btn-add-house" class="btn">Add house</button>
+                    <div id="houses-list" style="margin-top:8px; width:100%;"></div>
                 </div>
             </div>
 
@@ -61,9 +61,10 @@
                 <div><strong>Full name:</strong> <span id="staff-fullname">—</span></div>
                 <div><strong>Status:</strong> <span id="staff-status">—</span></div>
 
-                <div style="margin-top:8px;">
+                <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
                     <button id="btn-get-specs" class="btn">Get specializations</button>
-                    <div id="specs-list" style="margin-top:8px;"></div>
+                    <button id="btn-add-spec" class="btn">Add specialization</button>
+                    <div id="specs-list" style="margin-top:8px; width:100%;"></div>
                 </div>
             </div>
         </div>
@@ -72,6 +73,22 @@
             <button id="modal-close" class="btn">Close</button>
         </div>
         <output id="modal-output" class="form-output" aria-live="polite" style="margin-top:8px;"></output>
+    </div>
+
+    <div id="create-modal" class="card hidden" style="position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); width:90%; max-width:520px;">
+        <h2 class="card-title" id="create-title">Add</h2>
+        <form id="create-form" class="form" onsubmit="return false;">
+            <div class="form-row">
+                <label id="create-label" for="create-field">ID</label>
+                <input id="create-field" type="number" min="1" step="1" placeholder="Enter ID">
+                <span class="field-hint" id="create-hint"></span>
+            </div>
+            <div class="form-row inline" style="gap:8px;">
+                <button id="create-save" class="btn" type="submit">Save</button>
+                <button id="create-cancel" class="btn" type="button">Cancel</button>
+            </div>
+            <output id="create-output" class="form-output" aria-live="polite"></output>
+        </form>
     </div>
 
     <script src="/static/js/users.js"></script>

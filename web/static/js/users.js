@@ -30,6 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const resFullEl = document.getElementById("res-fullname");
     const housesList = document.getElementById("houses-list");
     const btnGetHouses = document.getElementById("btn-get-houses");
+    const btnAddHouse = document.getElementById("btn-add-house");
 
     const staffIdEl = document.getElementById("staff-id");
     const staffPhoneEl = document.getElementById("staff-phone");
@@ -37,6 +38,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const staffStatusEl = document.getElementById("staff-status");
     const specsList = document.getElementById("specs-list");
     const btnGetSpecs = document.getElementById("btn-get-specs");
+    const btnAddSpec = document.getElementById("btn-add-spec");
+
+    const createModal = document.getElementById("create-modal");
+    const createTitle = document.getElementById("create-title");
+    const createLabel = document.getElementById("create-label");
+    const createField = document.getElementById("create-field");
+    const createHint = document.getElementById("create-hint");
+    const createSave = document.getElementById("create-save");
+    const createCancel = document.getElementById("create-cancel");
+    const createOutput = document.getElementById("create-output");
+    const createForm = document.getElementById("create-form");
+
+    let currentAddMode = null;
 
     const clearList = () => { if (listEl) listEl.innerHTML = ""; };
     const updateControls = () => {
@@ -153,7 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const closeModal = () => { if (!modal) return; modal.classList.add('hidden'); };
 
     const resetModal = () => {
-        modalOutput.textContent = '';
+        if (modalOutput) { modalOutput.textContent = ''; modalOutput.className = 'form-output'; }
         tabResidentBtn.classList.add('hidden');
         tabStaffBtn.classList.add('hidden');
         residentPanel.classList.add('hidden');
@@ -190,6 +204,9 @@ document.addEventListener("DOMContentLoaded", () => {
                         renderHouses(jd.houses || []);
                     } catch (err) { housesList.textContent = 'Network error'; }
                 };
+                if (btnAddHouse) {
+                    btnAddHouse.onclick = () => openCreateModal('house');
+                }
             }
 
             if (data.staff) {
@@ -208,6 +225,9 @@ document.addEventListener("DOMContentLoaded", () => {
                         renderSpecs(jd.specializations || []);
                     } catch (err) { specsList.textContent = 'Network error'; }
                 };
+                if (btnAddSpec) {
+                    btnAddSpec.onclick = () => openCreateModal('spec');
+                }
             }
 
             if (modalOutput) { modalOutput.textContent = ''; modalOutput.className = 'form-output'; }
@@ -290,11 +310,95 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    if (prevBtn) prevBtn.addEventListener('click', () => { if (page > 1) { page--; load(); }});
-    if (nextBtn) nextBtn.addEventListener('click', () => { if (page < lastPages) { page++; load(); }});
-    if (searchBtn) searchBtn.addEventListener('click', () => { page = 1; load(); });
-    if (limitSelect) limitSelect.addEventListener('change', (e) => { const v = parseInt(e.target.value || '20', 10); if (!isNaN(v) && v>0) { limit = v; page = 1; load(); }});
-    if (modalClose) modalClose.addEventListener('click', () => closeModal());
+    const openCreateModal = (mode) => {
+        currentAddMode = mode;
+        createField.value = '';
+        createOutput.textContent = '';
+        createOutput.className = 'form-output';
+
+        if (mode === 'house') {
+            createTitle.textContent = 'Add house';
+            createLabel.textContent = 'House ID';
+            createField.type = 'number';
+            createField.min = '1';
+            createField.step = '1';
+            createField.placeholder = 'Enter house ID';
+            createHint.textContent = 'Assign a house by its numeric ID to this resident.';
+        } else {
+            createTitle.textContent = 'Add specialization';
+            createLabel.textContent = 'Specialization ID';
+            createField.type = 'text';
+            createField.removeAttribute('min');
+            createField.removeAttribute('step');
+            createField.placeholder = 'Enter specialization ID';
+            createHint.textContent = 'Assign a specialization by its string ID to this staff member.';
+        }
+        createModal.classList.remove('hidden');
+        createField.focus();
+    };
+    const closeCreateModal = () => {
+        createModal.classList.add('hidden');
+        currentAddMode = null;
+    };
+
+    const postForm = async (url, bodyObj) => {
+        const body = new URLSearchParams();
+        Object.entries(bodyObj).forEach(([k, v]) => body.append(k, String(v)));
+        const res = await fetch(url, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+            body
+        });
+        const text = await res.text();
+        let json;
+        try { json = JSON.parse(text || '{}'); } catch { json = { raw: text }; }
+        return { ok: res.ok, json };
+    };
+
+    if (createSave) {
+        createForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            try {
+                if (currentAddMode === 'house') {
+                    const idVal = parseInt(createField.value.trim(), 10);
+                    if (!Number.isFinite(idVal) || idVal <= 0) {
+                        createOutput.className = 'form-output error';
+                        createOutput.textContent = 'Please enter a valid positive number.';
+                        return;
+                    }
+                    const residentID = resIdEl.textContent.trim();
+                    const url = '/api/staff/users/resident/add-house?residentID=' + encodeURIComponent(residentID);
+                    const { ok, json } = await postForm(url, { houseID: idVal });
+                    if (!ok) throw new Error(json.error || 'Add house failed');
+                    createOutput.className = 'form-output success';
+                    createOutput.textContent = 'House added.';
+                    btnGetHouses && btnGetHouses.click();
+                    setTimeout(closeCreateModal, 400);
+                } else if (currentAddMode === 'spec') {
+                    const specId = createField.value.trim();
+                    if (!specId) {
+                        createOutput.className = 'form-output error';
+                        createOutput.textContent = 'Please enter a specialization ID.';
+                        return;
+                    }
+                    const staffID = staffIdEl.textContent.trim();
+                    const url = '/api/staff/users/staff/add-specialization?staffMemberID=' + encodeURIComponent(staffID);
+                    const { ok, json } = await postForm(url, { specializationID: specId });
+                    if (!ok) throw new Error(json.error || 'Add specialization failed');
+                    createOutput.className = 'form-output success';
+                    createOutput.textContent = 'Specialization added.';
+                    btnGetSpecs && btnGetSpecs.click();
+                    setTimeout(closeCreateModal, 400);
+                }
+            } catch (err) {
+                createOutput.className = 'form-output error';
+                createOutput.textContent = err.message || 'Network or server error.';
+            }
+        });
+    }
+    if (createCancel) createCancel.addEventListener('click', () => closeCreateModal());
 
     if (tabResidentBtn) tabResidentBtn.addEventListener('click', () => {
         residentPanel.classList.remove('hidden');
@@ -305,6 +409,11 @@ document.addEventListener("DOMContentLoaded", () => {
         residentPanel.classList.add('hidden');
     });
 
+    if (prevBtn) prevBtn.addEventListener('click', () => { if (page > 1) { page--; load(); }});
+    if (nextBtn) nextBtn.addEventListener('click', () => { if (page < lastPages) { page++; load(); }});
+    if (searchBtn) searchBtn.addEventListener('click', () => { page = 1; load(); });
+    if (limitSelect) limitSelect.addEventListener('change', (e) => { const v = parseInt(e.target.value || '20', 10); if (!isNaN(v) && v>0) { limit = v; page = 1; load(); }});
+    if (modalClose) modalClose.addEventListener('click', () => closeModal());
     if (searchInput) {
         searchInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {

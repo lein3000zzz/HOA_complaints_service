@@ -148,6 +148,40 @@ func (h *ResidentsHandler) CreateHouse() func(c *gin.Context) {
 		}
 
 		h.Logger.Infof("created house: %v", house)
-		c.JSON(http.StatusOK, house)
+		responseJSON["message"] = "success"
+		c.JSON(http.StatusOK, responseJSON)
+	}
+}
+
+func (h *ResidentsHandler) AddResidentHouse() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		responseJSON := gin.H{}
+
+		residentID := c.Query("residentID")
+		houseIDStr := c.PostForm("houseID")
+
+		houseID, errConv := strconv.Atoi(houseIDStr)
+		if residentID == "" || houseIDStr == "" || errConv != nil {
+			responseJSON["error"] = "invalid data provided"
+			h.Logger.Debugf("invalid data provided residentID=%s houseID=%s err=%v", residentID, houseIDStr, errConv)
+
+			c.AbortWithStatusJSON(http.StatusBadRequest, responseJSON)
+			return
+		}
+
+		if err := h.ResidentsRepo.AddResidentAddressAssoc(residentID, houseID); err != nil {
+			h.Logger.Errorf("failed to assign house: %v", err)
+			responseJSON["error"] = "failed to assign house: " + err.Error()
+
+			if errors.Is(err, residence.ErrResidentNotFound) {
+				c.AbortWithStatusJSON(http.StatusBadRequest, responseJSON)
+			} else {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, responseJSON)
+			}
+			return
+		}
+
+		responseJSON["message"] = "success"
+		c.JSON(http.StatusOK, responseJSON)
 	}
 }

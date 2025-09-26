@@ -105,7 +105,7 @@ body {
 
 label { color:var(--muted); font-size:14px; }
 
-input[type="text"], input[type="password"], input[type="tel"], select, textarea {
+input[type="text"], input[type="password"], input[type="tel"], input[type="number"], select, textarea {
     appearance:none; width:100%; padding:10px 12px; border-radius:var(--radius);
     border:1px solid var(--border); background:#07101a; color:var(--text); outline:none;
 }
