@@ -76,6 +76,7 @@ func (h *UserHandler) Register() func(c *gin.Context) {
 					h.Logger.Errorf("register resident error: %s", errResidentReg.Error())
 
 					finalErr = errors.Join(finalErr, errResidentReg)
+					responseJSON["error"] = finalErr.Error()
 				}
 			}
 
@@ -83,12 +84,13 @@ func (h *UserHandler) Register() func(c *gin.Context) {
 				_, errStaffReg := h.StaffRepo.RegisterNewMember(phoneNumber, fullName)
 				if errStaffReg != nil {
 					h.Logger.Errorf("register staff error: %s", errStaffReg.Error())
+					
 					finalErr = errors.Join(finalErr, errStaffReg)
+					responseJSON["error"] = finalErr.Error()
 				}
 			}
 		}
 
-		responseJSON["error"] = finalErr.Error()
 		responseJSON["message"] = user.Phone
 		h.Logger.Debugf("user registered %s", user.Phone)
 		c.JSON(http.StatusOK, responseJSON)

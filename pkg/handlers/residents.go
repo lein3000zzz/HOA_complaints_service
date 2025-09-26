@@ -70,3 +70,84 @@ func (h *ResidentsHandler) DeleteHouseForResident() func(c *gin.Context) {
 		c.JSON(http.StatusOK, responseJSON)
 	}
 }
+
+func (h *ResidentsHandler) GetHouses() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		responseJSON := gin.H{}
+
+		page := 1
+		limit := 10
+
+		if p := c.Query("page"); p != "" {
+			if v, err := strconv.Atoi(p); err == nil && v > 0 {
+				page = v
+			}
+		}
+		if l := c.Query("limit"); l != "" {
+			if v, err := strconv.Atoi(l); err == nil && v > 0 && v <= 1000 {
+				limit = v
+			}
+		}
+
+		offset := (page - 1) * limit
+
+		pattern := c.Query("pattern")
+
+		houses, total, err := h.ResidentsRepo.GetHouses(pattern, limit, offset)
+		if err != nil {
+			h.Logger.Errorf("failed to get houses: %v", err)
+			responseJSON["error"] = "failed to get houses"
+
+			c.AbortWithStatusJSON(http.StatusInternalServerError, responseJSON)
+			return
+		}
+
+		pages := 1
+		if total > 0 {
+			pages = total / limit
+			if total%limit != 0 {
+				pages++
+			}
+		}
+
+		meta := gin.H{
+			"total": total,
+			"page":  page,
+			"limit": limit,
+			"pages": pages,
+		}
+
+		responseJSON["houses"] = houses
+		responseJSON["meta"] = meta
+
+		c.JSON(http.StatusOK, responseJSON)
+	}
+}
+
+func (h *ResidentsHandler) CreateHouse() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		responseJSON := gin.H{}
+
+		address := c.PostForm("address")
+
+		if address == "" {
+			responseJSON["error"] = "address is required"
+			h.Logger.Infof("create house missing fields: address=%s", address)
+
+			c.AbortWithStatusJSON(http.StatusBadRequest, responseJSON)
+			return
+		}
+
+		house, err := h.ResidentsRepo.RegisterNewHouse(address)
+		if err != nil {
+			h.Logger.Errorf("failed to create house: %v", err)
+			responseJSON["error"] = "failed to create house"
+
+			c.AbortWithStatusJSON(http.StatusInternalServerError, responseJSON)
+			return
+		}
+
+		h.Logger.Infof("created house: %v", house)
+		c.JSON(http.StatusOK, house)
+	}
+}

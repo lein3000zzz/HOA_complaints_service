@@ -104,3 +104,83 @@ func (h *StaffHandler) DeactivateSpecialization() func(c *gin.Context) {
 		c.JSON(http.StatusOK, responseJSON)
 	}
 }
+
+func (h *StaffHandler) GetAllSpecs() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		responseJSON := gin.H{}
+
+		page := 1
+		limit := 10
+
+		if p := c.Query("page"); p != "" {
+			if v, err := strconv.Atoi(p); err == nil && v > 0 {
+				page = v
+			}
+		}
+		if l := c.Query("limit"); l != "" {
+			if v, err := strconv.Atoi(l); err == nil && v > 0 && v <= 1000 {
+				limit = v
+			}
+		}
+
+		offset := (page - 1) * limit
+
+		pattern := c.Query("pattern")
+
+		specs, total, err := h.StaffRepo.GetSpecializations(pattern, limit, offset)
+		if err != nil {
+			h.Logger.Errorf("failed to get all specializations: %v", err)
+			responseJSON["error"] = "failed to get all specializations: " + err.Error()
+			c.AbortWithStatusJSON(http.StatusInternalServerError, responseJSON)
+			return
+		}
+
+		pages := 1
+		if total > 0 {
+			pages = total / limit
+			if total%limit != 0 {
+				pages++
+			}
+		}
+
+		meta := gin.H{
+			"total": total,
+			"page":  page,
+			"limit": limit,
+			"pages": pages,
+		}
+
+		responseJSON["specializations"] = specs
+		responseJSON["meta"] = meta
+
+		c.JSON(http.StatusOK, responseJSON)
+	}
+}
+
+func (h *StaffHandler) CreateSpecialization() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		responseJSON := gin.H{}
+
+		jobName := c.PostForm("jobName")
+
+		if jobName == "" {
+			responseJSON["error"] = "jobID and name are required"
+			h.Logger.Infof("create specialization missing fields: jobID=%s", jobName)
+
+			c.AbortWithStatusJSON(http.StatusBadRequest, responseJSON)
+			return
+		}
+
+		spec, err := h.StaffRepo.RegisterNewSpecialization(jobName)
+		if err != nil {
+			h.Logger.Errorf("failed to create specialization: %v", err)
+			responseJSON["error"] = "failed to create specialization"
+
+			c.AbortWithStatusJSON(http.StatusInternalServerError, responseJSON)
+			return
+		}
+
+		h.Logger.Infof("created specialization: %v", spec)
+		c.JSON(http.StatusOK, spec)
+	}
+}

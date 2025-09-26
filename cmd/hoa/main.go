@@ -148,13 +148,21 @@ func main() {
 	staffApiGroup.GET("/users/staff/info", staffHandler.GetSpecializationsForStaffMember())
 	staffApiGroup.GET("/users/staff/delete-spec", staffHandler.DeactivateSpecialization())
 
+	staffApiGroup.GET("/specializations/list", staffHandler.GetAllSpecs())
+	staffApiGroup.POST("/specializations/create", staffHandler.CreateSpecialization())
+	staffGroup.GET("/specializations/info", pageHandler.SpecializationsPage())
+
+	staffApiGroup.GET("/houses/list", resHandler.GetHouses())
+	staffApiGroup.POST("/houses/create", resHandler.CreateHouse())
+	staffGroup.GET("/houses/info", pageHandler.HousesPage())
+
 	staffApiGroup.GET("/requests/panel", reqHandler.GetRequestsForAdmin())
 	staffApiGroup.POST("/requests/panel/update", reqHandler.UpdateRequest())
 	staffApiGroup.GET("/requests/panel/update/random-assign", staffHandler.GetLeastBusyByJobID())
 	staffApiGroup.GET("/requests/panel/delete/:id", reqHandler.DeleteRequest())
 
-	staffGroup.GET("/requests/panel", pageHandler.AdminRequests())
-	staffGroup.GET("/users/panel", pageHandler.UsersManager())
+	staffGroup.GET("/requests/panel", pageHandler.AdminRequestsPage())
+	staffGroup.GET("/users/panel", pageHandler.UsersManagerPage())
 
 	log.Fatal(r.Run(":8000"))
 }

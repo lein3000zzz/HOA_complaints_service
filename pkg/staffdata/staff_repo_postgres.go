@@ -168,7 +168,7 @@ func (repo *StaffRepoPostgres) GetStaffMemberByPhoneNumber(phoneNumber string) (
 func (repo *StaffRepoPostgres) DeleteByPhone(phoneNumber string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	
+
 	var member StaffMemberPg
 	if err := repo.db.WithContext(ctx).Where("phone_number = ?", phoneNumber).First(&member).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -291,4 +291,44 @@ func (repo *StaffRepoPostgres) DeactivateStaffMemberSpecialization(staffMemberID
 
 	repo.logger.Infof("deactivated specialization %s for member %d", jobID, staffMemberID)
 	return nil
+}
+
+func (repo *StaffRepoPostgres) GetSpecializations(pattern string, limit, offset int) ([]*Specialization, int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var specsPg []SpecializationPg
+	query := repo.db.WithContext(ctx).Model(&SpecializationPg{})
+
+	likePattern := "%" + pattern + "%"
+	query = query.Where("name LIKE ? OR id LIKE ?", likePattern, likePattern)
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		repo.logger.Warnf("failed to count specializations: %v", err)
+		return nil, 0, err
+	}
+
+	if total == 0 {
+		return []*Specialization{}, 0, nil
+	}
+
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+	if offset > 0 {
+		query = query.Offset(offset)
+	}
+
+	if err := query.Find(&specsPg).Error; err != nil {
+		repo.logger.Warnf("failed to query specializations: %v", err)
+		return nil, int(total), err
+	}
+
+	result := make([]*Specialization, len(specsPg))
+	for i := range specsPg {
+		result[i] = (*Specialization)(&specsPg[i])
+	}
+
+	return result, int(total), nil
 }

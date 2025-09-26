@@ -270,3 +270,43 @@ func (repo *ResidentPgRepo) DeleteResidentHouse(residentID string, houseID int) 
 	repo.logger.Infof("removed house %d from resident %s", houseID, residentID)
 	return nil
 }
+
+func (repo *ResidentPgRepo) GetHouses(pattern string, limit, offset int) ([]*House, int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var housesPg []HousePg
+	query := repo.db.WithContext(ctx).Model(&HousePg{})
+
+	likePattern := "%" + pattern + "%"
+	query = query.Where("address LIKE ? OR CAST(id AS TEXT) LIKE ?", likePattern, likePattern)
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		repo.logger.Warnf("failed to count houses: %v", err)
+		return nil, 0, err
+	}
+
+	if total == 0 {
+		return []*House{}, 0, nil
+	}
+
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+	if offset > 0 {
+		query = query.Offset(offset)
+	}
+
+	if err := query.Find(&housesPg).Error; err != nil {
+		repo.logger.Warnf("failed to query houses: %v", err)
+		return nil, int(total), err
+	}
+
+	result := make([]*House, len(housesPg))
+	for i := range housesPg {
+		result[i] = (*House)(&housesPg[i])
+	}
+
+	return result, int(total), nil
+}

@@ -33,6 +33,7 @@ type StaffRepo interface {
 	FindLeastBusyByJobID(jobID string) (*StaffMember, error)
 	FindCurrentSpecializations(staffMemberID int) ([]*Specialization, error)
 	DeactivateStaffMemberSpecialization(staffMemberID int, jobID string) error
+	GetSpecializations(pattern string, limit, offset int) ([]*Specialization, int, error)
 }
 
 type StaffMemberStatus string

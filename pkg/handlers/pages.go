@@ -26,6 +26,8 @@ func (h *PageHandler) InitHTML() {
 		"admin.tmpl",
 		"admin_requests.tmpl",
 		"users.tmpl",
+		"specializations.tmpl",
+		"admin_houses.tmpl",
 	}
 
 	h.Templates = make(map[string]*template.Template)
@@ -73,7 +75,7 @@ func (h *PageHandler) MainPage() gin.HandlerFunc {
 	}
 }
 
-func (h *PageHandler) AdminRequests() gin.HandlerFunc {
+func (h *PageHandler) AdminRequestsPage() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		phoneVal, exists := c.Get("phoneNumber")
 
@@ -93,7 +95,47 @@ func (h *PageHandler) AdminRequests() gin.HandlerFunc {
 	}
 }
 
-func (h *PageHandler) UsersManager() gin.HandlerFunc {
+func (h *PageHandler) SpecializationsPage() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		phoneVal, exists := c.Get("phoneNumber")
+
+		if !exists {
+			c.Redirect(http.StatusSeeOther, "/login")
+		}
+
+		roleVal, _ := c.Get("role")
+
+		data := gin.H{
+			"title":       "user management",
+			"role":        roleVal,
+			"phoneNumber": phoneVal,
+		}
+
+		h.respondWithHTML(c, "specializations.tmpl", data)
+	}
+}
+
+func (h *PageHandler) HousesPage() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		phoneVal, exists := c.Get("phoneNumber")
+
+		if !exists {
+			c.Redirect(http.StatusSeeOther, "/login")
+		}
+
+		roleVal, _ := c.Get("role")
+
+		data := gin.H{
+			"title":       "houses management",
+			"role":        roleVal,
+			"phoneNumber": phoneVal,
+		}
+
+		h.respondWithHTML(c, "admin_houses.tmpl", data)
+	}
+}
+
+func (h *PageHandler) UsersManagerPage() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		phoneVal, exists := c.Get("phoneNumber")
 
