@@ -68,3 +68,14 @@ func GetPageAndLimitFromContext(c *gin.Context) (int, int) {
 
 	return page, limit
 }
+
+func CountPages(total, limit int) int {
+	pages := 1
+	if total > 0 {
+		pages = total / limit
+		if total%limit != 0 {
+			pages++
+		}
+	}
+	return pages
+}

@@ -26,12 +26,10 @@ type UserHandler struct {
 	Logger         *zap.SugaredLogger
 }
 
-// TODO залогировать тут всё!
 func (h *UserHandler) Register() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		phoneNumber := c.PostForm("phoneNumber")
 		password := c.PostForm("password")
-		// TODO: value может быть каким-то еще, ПОТОМУ ЧТО Я ХОЧУ ЧЕКБОКСЫЫЫЫЫЫЫЫЫЫ, не забыть про это
 		isResident := c.PostForm("isResident") == "on"
 		isStaffMember := c.PostForm("isStaffMember") == "on"
 		fullName := c.PostForm("fullName")
@@ -268,13 +266,7 @@ func (h *UserHandler) GetAllUsersFiltered() func(c *gin.Context) {
 			return
 		}
 
-		pages := 1
-		if total > 0 {
-			pages = total / limit
-			if total%limit != 0 {
-				pages++
-			}
-		}
+		pages := utils.CountPages(total, limit)
 
 		phones := make([]string, len(users))
 		for i, user := range users {

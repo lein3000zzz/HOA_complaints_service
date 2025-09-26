@@ -124,13 +124,7 @@ func (h *StaffHandler) GetAllSpecs() func(c *gin.Context) {
 			return
 		}
 
-		pages := 1
-		if total > 0 {
-			pages = total / limit
-			if total%limit != 0 {
-				pages++
-			}
-		}
+		pages := utils.CountPages(total, limit)
 
 		meta := gin.H{
 			"total": total,
@@ -257,13 +251,7 @@ func (h *StaffHandler) GetOrganizations() func(c *gin.Context) {
 			return
 		}
 
-		pages := 1
-		if total > 0 {
-			pages = total / limit
-			if total%limit != 0 {
-				pages++
-			}
-		}
+		pages := utils.CountPages(total, limit)
 
 		meta := gin.H{
 			"total": total,

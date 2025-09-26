@@ -71,6 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 if (addHouseOutput) { addHouseOutput.textContent = 'Created'; addHouseOutput.className = 'form-output success'; }
+                if (addHouseForm) addHouseForm.reset()
                 toggleAddModal(false);
                 if (typeof load === 'function') load();
             } catch {

@@ -68,6 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
                 if (addOrgOutput) { addOrgOutput.textContent = "Created"; addOrgOutput.className = "form-output success"; }
+                if (addOrgForm) addOrgForm.reset();
                 toggleAddModal(false);
                 if (typeof load === "function") load();
             } catch {

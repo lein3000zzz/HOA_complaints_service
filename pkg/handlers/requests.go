@@ -124,13 +124,7 @@ func (h *RequestsHandler) GetRequestsForUser() func(c *gin.Context) {
 			return
 		}
 
-		pages := 1
-		if total > 0 {
-			pages = total / limit
-			if total%limit != 0 {
-				pages++
-			}
-		}
+		pages := utils.CountPages(total, limit)
 
 		meta := gin.H{
 			"total": total,
@@ -214,13 +208,7 @@ func (h *RequestsHandler) GetRequestsForAdmin() func(c *gin.Context) {
 			return
 		}
 
-		pages := 1
-		if total > 0 {
-			pages = total / limit
-			if total%limit != 0 {
-				pages++
-			}
-		}
+		pages := utils.CountPages(total, limit)
 
 		meta := gin.H{
 			"total": total,
