@@ -185,3 +185,32 @@ func (h *ResidentsHandler) AddResidentHouse() func(c *gin.Context) {
 		c.JSON(http.StatusOK, responseJSON)
 	}
 }
+
+func (h *ResidentsHandler) GetResidentPhoneNumberByID() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		responseJSON := gin.H{}
+
+		residentID := c.Query("residentID")
+		if residentID == "" {
+			responseJSON["error"] = "residentID is required"
+			h.Logger.Debugf("get resident phone missing residentID")
+			c.AbortWithStatusJSON(http.StatusBadRequest, responseJSON)
+			return
+		}
+
+		resident, err := h.ResidentsRepo.GetResidentByID(residentID)
+		if err != nil {
+			h.Logger.Errorf("failed to get resident by id: %v", err)
+			responseJSON["error"] = "failed to get resident: " + err.Error()
+			if errors.Is(err, residence.ErrResidentNotFound) {
+				c.AbortWithStatusJSON(http.StatusBadRequest, responseJSON)
+			} else {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, responseJSON)
+			}
+			return
+		}
+
+		responseJSON["phone"] = resident.Phone
+		c.JSON(http.StatusOK, responseJSON)
+	}
+}

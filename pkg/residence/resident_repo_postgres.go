@@ -310,3 +310,21 @@ func (repo *ResidentPgRepo) GetHouses(pattern string, limit, offset int) ([]*Hou
 
 	return result, int(total), nil
 }
+
+func (repo *ResidentPgRepo) GetResidentByID(residentID string) (*Resident, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var residentPg ResidentPg
+	if err := repo.db.WithContext(ctx).Where("id = ?", residentID).First(&residentPg).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			repo.logger.Debugf("resident not found: %s", residentID)
+			return nil, ErrResidentNotFound
+		}
+		repo.logger.Errorf("failed to find resident by id: %v", err)
+		return nil, err
+	}
+
+	resident := Resident(residentPg)
+	return &resident, nil
+}

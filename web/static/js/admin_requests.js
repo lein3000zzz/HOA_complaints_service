@@ -185,6 +185,34 @@ document.addEventListener("DOMContentLoaded", () => {
                 openModal(r);
             });
 
+            const phoneBtn = document.createElement('button');
+            phoneBtn.className = 'btn';
+            phoneBtn.textContent = 'Get phone';
+            phoneBtn.addEventListener('click', async () => {
+                if (!residentID) {
+                    alert('No resident ID');
+                    return;
+                }
+                try {
+                    const url = '/api/staff/users/resident/get-number?residentID=' + encodeURIComponent(residentID);
+                    const res = await fetch(url, { method: 'POST', credentials: 'same-origin' });
+                    const text = await res.text();
+                    let data;
+                    try { data = JSON.parse(text || '{}'); } catch { data = { raw: text }; }
+                    if (!res.ok) {
+                        alert(data.error || data.raw || ('Failed to get phone, HTTP ' + res.status));
+                        return;
+                    }
+                    if (data.phone) {
+                        alert('Phone: ' + data.phone);
+                    } else {
+                        alert('Phone not found');
+                    }
+                } catch {
+                    alert('Network error');
+                }
+            });
+
             const delBtn = document.createElement('button');
             delBtn.className = 'btn';
             delBtn.textContent = 'Delete';
@@ -209,6 +237,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             actions.appendChild(editBtn);
+            actions.appendChild(phoneBtn);
             actions.appendChild(delBtn);
             card.appendChild(actions);
 
