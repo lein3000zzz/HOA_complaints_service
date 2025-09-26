@@ -1,4 +1,4 @@
-package staffdata
+package company
 
 import (
 	"DBPrototyping/pkg/requests"
@@ -16,6 +16,7 @@ import (
 
 var (
 	ErrCreatingSpecialization = errors.New("error creating specialization")
+	ErrCreatingOrganization   = errors.New("error creating organization")
 	ErrStaffMemberNotFound    = errors.New("staff member not found")
 	ErrCreatingMember         = errors.New("error creating a new member")
 )
@@ -36,6 +37,12 @@ type StaffMemberSpecializationPg StaffMemberSpecialization
 
 func (StaffMemberSpecializationPg) TableName() string {
 	return "staff_member_specialization"
+}
+
+type OrganizationPg Organization
+
+func (OrganizationPg) TableName() string {
+	return "organizations"
 }
 
 type StaffRepoPostgres struct {
@@ -90,7 +97,6 @@ func (repo *StaffRepoPostgres) RegisterNewSpecialization(jobTitle string) (*Spec
 	return &spec, nil
 }
 
-// TODO на хэндлере проверять количество символов в номере
 func (repo *StaffRepoPostgres) RegisterNewMember(phone, fullName string) (*StaffMember, error) {
 	newMemberPg := StaffMemberPg{
 		Phone:    phone,
@@ -331,4 +337,106 @@ func (repo *StaffRepoPostgres) GetSpecializations(pattern string, limit, offset 
 	}
 
 	return result, int(total), nil
+}
+
+func (repo *StaffRepoPostgres) CreateOrganization(name string) (*Organization, error) {
+	retryFactor := os.Getenv("RETRY_FACTOR")
+	retries, errConversion := strconv.Atoi(retryFactor)
+	if errConversion != nil || retries <= 0 {
+		retries = 1
+	}
+
+	orgPg := OrganizationPg{
+		Name: name,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	createdFlag := false
+	for i := 0; i < retries && !createdFlag; i++ {
+		orgID, err := utils.GenerateID()
+		if err != nil {
+			repo.logger.Warnf("failed to generate specialization ID, %v", err)
+			continue
+		}
+
+		orgPg.ID = orgID
+
+		upsertRes := repo.db.WithContext(ctx).Clauses(clause.OnConflict{DoNothing: true}).Create(&orgPg)
+		if upsertRes.Error != nil || upsertRes.RowsAffected != 1 {
+			continue
+		}
+		createdFlag = true
+	}
+
+	if !createdFlag {
+		return nil, ErrCreatingSpecialization
+	}
+
+	org := Organization(orgPg)
+
+	return &org, nil
+}
+
+func (repo *StaffRepoPostgres) GetOrganizationsByPattern(pattern string, limit, offset int) ([]*Organization, int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var orgsPg []OrganizationPg
+	query := repo.db.WithContext(ctx).Model(&OrganizationPg{})
+
+	likePattern := "%" + pattern + "%"
+	query = query.Where("name LIKE ? OR id LIKE ?", likePattern, likePattern)
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		repo.logger.Warnf("failed to count organizations: %v", err)
+		return nil, 0, err
+	}
+
+	if total == 0 {
+		return []*Organization{}, 0, nil
+	}
+
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+	if offset > 0 {
+		query = query.Offset(offset)
+	}
+
+	if err := query.Find(&orgsPg).Error; err != nil {
+		repo.logger.Warnf("failed to query organizations: %v", err)
+		return nil, int(total), err
+	}
+
+	orgs := make([]*Organization, len(orgsPg))
+	for i := range orgsPg {
+		orgs[i] = (*Organization)(&orgsPg[i])
+	}
+
+	return orgs, int(total), nil
+}
+
+func (repo *StaffRepoPostgres) UpdateOrganizationByID(organizationID, name string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	updateRes := repo.db.WithContext(ctx).
+		Model(&OrganizationPg{}).
+		Where("id = ?", organizationID).
+		Update("name", name)
+
+	if updateRes.Error != nil {
+		repo.logger.Errorf("failed to update organization %s: %v", organizationID, updateRes.Error)
+		return updateRes.Error
+	}
+
+	if updateRes.RowsAffected != 1 {
+		repo.logger.Debugf("organization not found: %s", organizationID)
+		return ErrCreatingOrganization
+	}
+
+	return nil
 }

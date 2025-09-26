@@ -1,0 +1,73 @@
+{{define "admin_organizations.tmpl"}}
+    {{template "base" .}}
+{{end}}
+
+{{define "content"}}
+    <section class="card">
+        <h1 class="card-title">Admin panel — Manage organizations</h1>
+
+        <div class="form-row" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+            <div style="font-weight:700;">Total: <span id="total-count">—</span></div>
+
+            <label style="margin-left:auto;">
+                Per page:
+                <select id="limit-select">
+                    <option value="10" selected>10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                </select>
+            </label>
+
+            <button id="refresh-btn" class="btn" style="margin-left:8px;">Refresh</button>
+        </div>
+
+        <div class="form-row" style="margin-top:12px; gap:8px; align-items:center; flex-wrap:wrap;">
+            <label style="flex:1;">
+                Search (ID or name):
+                <input id="pattern-input" type="text" placeholder="enter id or name" />
+            </label>
+            <button id="apply-filters" class="btn">Apply</button>
+        </div>
+
+        <div id="add-org-modal" class="card hidden" style="position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); z-index:200; width:90%; max-width:720px;">
+            <h2 class="card-title">Add organization</h2>
+            <form id="add-org-form" class="form" data-endpoint="/api/staff/organizations/create">
+                <label>Name: <input name="name" type="text" required></label>
+                <div class="form-row inline" style="margin-top:8px;">
+                    <button id="add-org-save" type="submit" class="btn">Save</button>
+                    <button id="add-org-cancel" type="button" class="btn">Cancel</button>
+                </div>
+                <output id="add-org-output" class="form-output" aria-live="polite"></output>
+            </form>
+        </div>
+
+        <div id="update-org-modal" class="card hidden" style="position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); z-index:200; width:90%; max-width:720px;">
+            <h2 class="card-title">Update organization</h2>
+            <form id="update-org-form" class="form" data-endpoint="/api/staff/organizations/update">
+                <label>Organization ID: <input id="update-org-id" name="id" type="text" readonly></label>
+                <label>Name: <input id="update-org-name" name="name" type="text" required></label>
+                <div class="form-row inline" style="margin-top:8px;">
+                    <button id="update-org-save" type="submit" class="btn">Save</button>
+                    <button id="update-org-cancel" type="button" class="btn">Cancel</button>
+                    </div>
+                <output id="update-org-output" class="form-output" aria-live="polite"></output>
+            </form>
+        </div>
+
+        <div style="margin-top:12px;">
+            <button id="add-org" class="btn">Add organization</button>
+        </div>
+
+        <div id="orgs-list" style="margin-top:16px;"></div>
+
+        <div id="pagination" class="form-row center" style="margin-top:12px; gap:8px;">
+            <button id="prev-page" class="btn">Prev</button>
+            <div id="page-info" style="font-weight:700;">Page <span id="current-page">1</span> / <span id="total-pages">1</span></div>
+            <button id="next-page" class="btn">Next</button>
+        </div>
+
+        <output id="orgs-output" class="form-output" aria-live="polite"></output>
+    </section>
+
+    <script src="/static/js/admin_organizations.js"></script>
+{{end}}

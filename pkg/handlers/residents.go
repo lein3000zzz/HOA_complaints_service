@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"DBPrototyping/pkg/residence"
+	"DBPrototyping/pkg/utils"
 	"errors"
 	"net/http"
 	"strconv"
@@ -75,19 +76,7 @@ func (h *ResidentsHandler) GetHouses() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		responseJSON := gin.H{}
 
-		page := 1
-		limit := 10
-
-		if p := c.Query("page"); p != "" {
-			if v, err := strconv.Atoi(p); err == nil && v > 0 {
-				page = v
-			}
-		}
-		if l := c.Query("limit"); l != "" {
-			if v, err := strconv.Atoi(l); err == nil && v > 0 && v <= 1000 {
-				limit = v
-			}
-		}
+		page, limit := utils.GetPageAndLimitFromContext(c)
 
 		offset := (page - 1) * limit
 

@@ -1,4 +1,4 @@
-package staffdata
+package company
 
 type StaffMember struct {
 	ID              int                         `gorm:"type:bigint;primaryKey"`
@@ -13,6 +13,11 @@ type Specialization struct {
 	Title string `gorm:"type:varchar(40);column:name;not null"`
 
 	Employees []StaffMemberSpecialization `gorm:"foreignKey:SpecializationID"`
+}
+
+type Organization struct {
+	ID   string `gorm:"type:char(40);primaryKey"`
+	Name string `gorm:"type:varchar(40);not null"`
 }
 
 type StaffMemberSpecialization struct {
@@ -34,6 +39,9 @@ type StaffRepo interface {
 	FindCurrentSpecializations(staffMemberID int) ([]*Specialization, error)
 	DeactivateStaffMemberSpecialization(staffMemberID int, jobID string) error
 	GetSpecializations(pattern string, limit, offset int) ([]*Specialization, int, error)
+	CreateOrganization(name string) (*Organization, error)
+	GetOrganizationsByPattern(pattern string, limit, offset int) ([]*Organization, int, error)
+	UpdateOrganizationByID(organizationID, name string) error
 }
 
 type StaffMemberStatus string

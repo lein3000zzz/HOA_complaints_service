@@ -1,14 +1,13 @@
 package handlers
 
 import (
+	"DBPrototyping/pkg/company"
 	"DBPrototyping/pkg/residence"
-	"DBPrototyping/pkg/staffdata"
 	"DBPrototyping/pkg/userdata"
 	"DBPrototyping/pkg/userdata/session"
 	"DBPrototyping/pkg/utils"
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -22,7 +21,7 @@ var (
 type UserHandler struct {
 	SessionManager session.GinSessionManagerRepo
 	ResidentsRepo  residence.ResidentsController
-	StaffRepo      staffdata.StaffRepo
+	StaffRepo      company.StaffRepo
 	UserRepo       userdata.UserRepo
 	Logger         *zap.SugaredLogger
 }
@@ -84,7 +83,7 @@ func (h *UserHandler) Register() func(c *gin.Context) {
 				_, errStaffReg := h.StaffRepo.RegisterNewMember(phoneNumber, fullName)
 				if errStaffReg != nil {
 					h.Logger.Errorf("register staff error: %s", errStaffReg.Error())
-					
+
 					finalErr = errors.Join(finalErr, errStaffReg)
 					responseJSON["error"] = finalErr.Error()
 				}
@@ -143,7 +142,7 @@ func (h *UserHandler) Login() func(c *gin.Context) {
 		}
 
 		staffMember, errStaff := h.StaffRepo.GetStaffMemberByPhoneNumber(userToLogin.Phone)
-		if errStaff != nil && !errors.Is(errStaff, staffdata.ErrStaffMemberNotFound) {
+		if errStaff != nil && !errors.Is(errStaff, company.ErrStaffMemberNotFound) {
 			finalErr = errors.Join(finalErr, errStaff)
 			responseJSON["error"] = finalErr.Error()
 
@@ -218,7 +217,7 @@ func (h *UserHandler) DeleteUser() func(c *gin.Context) {
 		}
 
 		staffDeleteErr := h.StaffRepo.DeleteByPhone(phoneNumber)
-		if staffDeleteErr != nil && !errors.Is(staffDeleteErr, staffdata.ErrStaffMemberNotFound) {
+		if staffDeleteErr != nil && !errors.Is(staffDeleteErr, company.ErrStaffMemberNotFound) {
 			h.Logger.Errorf("delete staff error: %s", staffDeleteErr.Error())
 			finalErr = errors.Join(finalErr, staffDeleteErr)
 
@@ -252,21 +251,10 @@ func (h *UserHandler) DeleteUser() func(c *gin.Context) {
 
 func (h *UserHandler) GetAllUsersFiltered() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		page := 1
-		limit := 10
-
 		responseJSON := gin.H{}
 
-		if p := c.Query("page"); p != "" {
-			if v, err := strconv.Atoi(p); err == nil && v > 0 {
-				page = v
-			}
-		}
-		if l := c.Query("limit"); l != "" {
-			if v, err := strconv.Atoi(l); err == nil && v > 0 && v <= 1000 {
-				limit = v
-			}
-		}
+		page, limit := utils.GetPageAndLimitFromContext(c)
+
 		phoneToMatch := c.Query("phoneNumber")
 
 		offset := (page - 1) * limit
@@ -314,7 +302,7 @@ func (h *UserHandler) GetUserDetails() func(c *gin.Context) {
 		responseJSON := gin.H{}
 
 		staffMember, errStaff := h.StaffRepo.GetStaffMemberByPhoneNumber(phoneNumber)
-		if errStaff != nil && !errors.Is(errStaff, staffdata.ErrStaffMemberNotFound) {
+		if errStaff != nil && !errors.Is(errStaff, company.ErrStaffMemberNotFound) {
 			responseJSON["error"] = errStaff.Error()
 
 			h.Logger.Errorf("staffMember error: %s", errStaff.Error())

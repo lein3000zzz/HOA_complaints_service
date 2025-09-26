@@ -1,10 +1,11 @@
 package handlers
 
 import (
+	"DBPrototyping/pkg/company"
 	"DBPrototyping/pkg/requests"
 	"DBPrototyping/pkg/residence"
-	"DBPrototyping/pkg/staffdata"
 	"DBPrototyping/pkg/userdata"
+	"DBPrototyping/pkg/utils"
 	"net/http"
 	"strconv"
 
@@ -15,7 +16,7 @@ import (
 type RequestsHandler struct {
 	RequestsRepo  requests.RequestRepo
 	ResidentsRepo residence.ResidentsController
-	StaffRepo     staffdata.StaffRepo
+	StaffRepo     company.StaffRepo
 	UserRepo      userdata.UserRepo
 	Logger        *zap.SugaredLogger
 }
@@ -108,19 +109,8 @@ func (h *RequestsHandler) GetRequestsForUser() func(c *gin.Context) {
 			return
 		}
 
-		page := 1
-		limit := 10
+		page, limit := utils.GetPageAndLimitFromContext(c)
 
-		if pageStr := c.Query("page"); pageStr != "" {
-			if pageInt, err := strconv.Atoi(pageStr); err == nil && pageInt > 0 {
-				page = pageInt
-			}
-		}
-		if limitStr := c.Query("limit"); limitStr != "" {
-			if limitInt, err := strconv.Atoi(limitStr); err == nil && limitInt > 0 && limitInt <= 100 {
-				limit = limitInt
-			}
-		}
 		sort := c.Query("sort")
 		offset := (page - 1) * limit
 
@@ -159,18 +149,8 @@ func (h *RequestsHandler) GetRequestsForUser() func(c *gin.Context) {
 
 func (h *RequestsHandler) GetRequestsForAdmin() func(c *gin.Context) {
 	return func(c *gin.Context) {
-		page := 1
-		limit := 20
-		if pageStr := c.Query("page"); pageStr != "" {
-			if pageInt, err := strconv.Atoi(pageStr); err == nil && pageInt > 0 {
-				page = pageInt
-			}
-		}
-		if limitStr := c.Query("limit"); limitStr != "" {
-			if limitInt, err := strconv.Atoi(limitStr); err == nil && limitInt > 0 && limitInt <= 500 {
-				limit = limitInt
-			}
-		}
+		page, limit := utils.GetPageAndLimitFromContext(c)
+
 		sort := c.Query("sort")
 
 		var filter requests.RequestFilter

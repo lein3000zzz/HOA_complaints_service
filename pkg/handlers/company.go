@@ -1,7 +1,8 @@
 package handlers
 
 import (
-	"DBPrototyping/pkg/staffdata"
+	"DBPrototyping/pkg/company"
+	"DBPrototyping/pkg/utils"
 	"errors"
 	"net/http"
 	"strconv"
@@ -11,7 +12,7 @@ import (
 )
 
 type StaffHandler struct {
-	StaffRepo staffdata.StaffRepo
+	StaffRepo company.StaffRepo
 	Logger    *zap.SugaredLogger
 }
 
@@ -27,7 +28,7 @@ func (h *StaffHandler) GetLeastBusyByJobID() func(c *gin.Context) {
 			h.Logger.Errorf("failed to find least busy by jobID: %v", errFindMember)
 			responseJSON["error"] = "failed to find least busy by jobID" + errFindMember.Error()
 
-			if errors.Is(errFindMember, staffdata.ErrStaffMemberNotFound) {
+			if errors.Is(errFindMember, company.ErrStaffMemberNotFound) {
 				c.AbortWithStatusJSON(http.StatusBadRequest, responseJSON)
 				return
 			}
@@ -60,7 +61,7 @@ func (h *StaffHandler) GetSpecializationsForStaffMember() func(c *gin.Context) {
 			h.Logger.Errorf("failed to find specializations: %v", errGetSpecs)
 			responseJSON["error"] = "failed to find specializations: " + errGetSpecs.Error()
 
-			if errors.Is(errGetSpecs, staffdata.ErrStaffMemberNotFound) {
+			if errors.Is(errGetSpecs, company.ErrStaffMemberNotFound) {
 				c.AbortWithStatusJSON(http.StatusBadRequest, responseJSON)
 			} else {
 				c.AbortWithStatusJSON(http.StatusInternalServerError, responseJSON)
@@ -109,19 +110,7 @@ func (h *StaffHandler) GetAllSpecs() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		responseJSON := gin.H{}
 
-		page := 1
-		limit := 10
-
-		if p := c.Query("page"); p != "" {
-			if v, err := strconv.Atoi(p); err == nil && v > 0 {
-				page = v
-			}
-		}
-		if l := c.Query("limit"); l != "" {
-			if v, err := strconv.Atoi(l); err == nil && v > 0 && v <= 1000 {
-				limit = v
-			}
-		}
+		page, limit := utils.GetPageAndLimitFromContext(c)
 
 		offset := (page - 1) * limit
 
@@ -180,6 +169,7 @@ func (h *StaffHandler) CreateSpecialization() func(c *gin.Context) {
 			return
 		}
 
+		responseJSON["message"] = "success"
 		h.Logger.Infof("created specialization: %v", spec)
 		c.JSON(http.StatusOK, spec)
 	}
@@ -214,6 +204,105 @@ func (h *StaffHandler) AddStaffSpecialization() func(c *gin.Context) {
 			responseJSON["error"] = "failed to add staff specialization: " + err.Error()
 
 			c.AbortWithStatusJSON(http.StatusInternalServerError, responseJSON)
+			return
+		}
+
+		responseJSON["message"] = "success"
+		c.JSON(http.StatusOK, responseJSON)
+	}
+}
+
+func (h *StaffHandler) CreateOrganization() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		responseJSON := gin.H{}
+
+		name := c.PostForm("name")
+		if name == "" {
+			responseJSON["error"] = "name is required"
+			h.Logger.Infof("create organization missing name")
+
+			c.AbortWithStatusJSON(http.StatusBadRequest, responseJSON)
+			return
+		}
+
+		org, err := h.StaffRepo.CreateOrganization(name)
+		if err != nil {
+			h.Logger.Errorf("failed to create organization: %v", err)
+			responseJSON["error"] = "failed to create organization"
+
+			c.AbortWithStatusJSON(http.StatusInternalServerError, responseJSON)
+			return
+		}
+
+		responseJSON["message"] = "success"
+		h.Logger.Infof("created organization: %v", org)
+		c.JSON(http.StatusOK, responseJSON)
+	}
+}
+
+func (h *StaffHandler) GetOrganizations() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		responseJSON := gin.H{}
+
+		page, limit := utils.GetPageAndLimitFromContext(c)
+
+		offset := (page - 1) * limit
+		pattern := c.Query("pattern")
+
+		orgs, total, err := h.StaffRepo.GetOrganizationsByPattern(pattern, limit, offset)
+		if err != nil {
+			h.Logger.Errorf("failed to get organizations: %v", err)
+			responseJSON["error"] = "failed to get organizations: " + err.Error()
+			c.AbortWithStatusJSON(http.StatusInternalServerError, responseJSON)
+			return
+		}
+
+		pages := 1
+		if total > 0 {
+			pages = total / limit
+			if total%limit != 0 {
+				pages++
+			}
+		}
+
+		meta := gin.H{
+			"total": total,
+			"page":  page,
+			"limit": limit,
+			"pages": pages,
+		}
+
+		responseJSON["organizations"] = orgs
+		responseJSON["meta"] = meta
+
+		c.JSON(http.StatusOK, responseJSON)
+	}
+}
+
+func (h *StaffHandler) UpdateOrganizationName() func(c *gin.Context) {
+	return func(c *gin.Context) {
+		responseJSON := gin.H{}
+
+		name := c.PostForm("name")
+		orgID := c.PostForm("organizationID")
+
+		if name == "" || orgID == "" {
+			responseJSON["error"] = "organizationID and name are required"
+			h.Logger.Infof("update organization missing fields: organizationID=%s name=%s", orgID, name)
+
+			c.AbortWithStatusJSON(http.StatusBadRequest, responseJSON)
+			return
+		}
+
+		if err := h.StaffRepo.UpdateOrganizationByID(orgID, name); err != nil {
+			h.Logger.Errorf("failed to update organization name: %v", err)
+			responseJSON["error"] = "failed to update organization"
+
+			if errors.Is(err, company.ErrCreatingOrganization) {
+				c.AbortWithStatusJSON(http.StatusBadRequest, responseJSON)
+			} else {
+				c.AbortWithStatusJSON(http.StatusInternalServerError, responseJSON)
+			}
 			return
 		}
 

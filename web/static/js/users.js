@@ -2,7 +2,7 @@
 
 document.addEventListener("DOMContentLoaded", () => {
     let page = 1;
-    let limit = 20;
+    let limit = 10;
     let lastPages = 1;
     const listEl = document.getElementById("users-list");
     const out = document.getElementById("users-output");
@@ -412,7 +412,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (prevBtn) prevBtn.addEventListener('click', () => { if (page > 1) { page--; load(); }});
     if (nextBtn) nextBtn.addEventListener('click', () => { if (page < lastPages) { page++; load(); }});
     if (searchBtn) searchBtn.addEventListener('click', () => { page = 1; load(); });
-    if (limitSelect) limitSelect.addEventListener('change', (e) => { const v = parseInt(e.target.value || '20', 10); if (!isNaN(v) && v>0) { limit = v; page = 1; load(); }});
+    if (limitSelect) limitSelect.addEventListener('change', (e) => { const v = parseInt(e.target.value || '10', 10); if (!isNaN(v) && v>0) { limit = v; page = 1; load(); }});
     if (modalClose) modalClose.addEventListener('click', () => closeModal());
     if (searchInput) {
         searchInput.addEventListener('keydown', (e) => {

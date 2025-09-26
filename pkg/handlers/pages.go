@@ -28,6 +28,7 @@ func (h *PageHandler) InitHTML() {
 		"users.tmpl",
 		"specializations.tmpl",
 		"admin_houses.tmpl",
+		"admin_organizations.tmpl",
 	}
 
 	h.Templates = make(map[string]*template.Template)
@@ -132,6 +133,26 @@ func (h *PageHandler) HousesPage() gin.HandlerFunc {
 		}
 
 		h.respondWithHTML(c, "admin_houses.tmpl", data)
+	}
+}
+
+func (h *PageHandler) OrganizationsPage() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		phoneVal, exists := c.Get("phoneNumber")
+
+		if !exists {
+			c.Redirect(http.StatusSeeOther, "/login")
+		}
+
+		roleVal, _ := c.Get("role")
+
+		data := gin.H{
+			"title":       "orgs management",
+			"role":        roleVal,
+			"phoneNumber": phoneVal,
+		}
+
+		h.respondWithHTML(c, "admin_organizations.tmpl", data)
 	}
 }
 

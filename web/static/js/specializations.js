@@ -2,7 +2,7 @@
 
 document.addEventListener("DOMContentLoaded", () => {
     let page = 1;
-    let limit = 20;
+    let limit = 10;
     let lastPages = 1;
 
     const list = document.getElementById("specs-list");
@@ -249,7 +249,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     if (refreshBtn) refreshBtn.addEventListener('click', () => load());
     if (limitSelect) limitSelect.addEventListener('change', (e) => {
-        const v = parseInt(e.target.value || '20', 10);
+        const v = parseInt(e.target.value || '10', 10);
         if (!isNaN(v) && v > 0) { limit = v; page = 1; load(); }
     });
     if (applyBtn) applyBtn.addEventListener('click', () => { page = 1; load(); });

@@ -5,8 +5,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let limit = 10;
     let lastPages = 1;
 
-    const list = document.getElementById("houses-list");
-    const out = document.getElementById("houses-output");
+    const list = document.getElementById("orgs-list");
+    const out = document.getElementById("orgs-output");
     const totalCountEl = document.getElementById("total-count");
     const currentPageEl = document.getElementById("current-page");
     const totalPagesEl = document.getElementById("total-pages");
@@ -19,106 +19,119 @@ document.addEventListener("DOMContentLoaded", () => {
     const patternInput = document.getElementById("pattern-input");
     const applyBtn = document.getElementById("apply-filters");
 
-    const addHouseBtn = document.getElementById("add-house");
-    const addHouseModal = document.getElementById("add-house-modal");
-    const addHouseForm = document.getElementById("add-house-form");
-    const addHouseOutput = document.getElementById("add-house-output");
-    const addHouseCancel = document.getElementById("add-house-cancel");
+    const addOrgBtn = document.getElementById("add-org");
+    const addOrgModal = document.getElementById("add-org-modal");
+    const addOrgForm = document.getElementById("add-org-form");
+    const addOrgOutput = document.getElementById("add-org-output");
+    const addOrgCancel = document.getElementById("add-org-cancel");
 
-    const updateHouseModal = document.getElementById("update-house-modal");
-    const updateHouseForm = document.getElementById("update-house-form");
-    const updateHouseId = document.getElementById("update-house-id");
-    const updateHouseAddress = document.getElementById("update-house-address");
-    const updateHouseCancel = document.getElementById("update-house-cancel");
-    const updateHouseOutput = document.getElementById("update-house-output");
+    const updateOrgModal = document.getElementById("update-org-modal");
+    const updateOrgForm = document.getElementById("update-org-form");
+    const updateOrgId = document.getElementById("update-org-id");
+    const updateOrgName = document.getElementById("update-org-name");
+    const updateOrgCancel = document.getElementById("update-org-cancel");
+    const updateOrgOutput = document.getElementById("update-org-output");
 
     const toggleAddModal = (show) => {
-        if (!addHouseModal) return;
-        if (show) addHouseModal.classList.remove("hidden");
-        else addHouseModal.classList.add("hidden");
+        if (!addOrgModal) return;
+        if (show) addOrgModal.classList.remove("hidden");
+        else addOrgModal.classList.add("hidden");
         window.scrollTo(0, 0);
     };
 
     const toggleUpdateModal = (show) => {
-        if (!updateHouseModal) return;
-        if (show) updateHouseModal.classList.remove("hidden");
-        else updateHouseModal.classList.add("hidden");
+        if (!updateOrgModal) return;
+        if (show) updateOrgModal.classList.remove("hidden");
+        else updateOrgModal.classList.add("hidden");
         window.scrollTo(0, 0);
     };
 
-    if (addHouseBtn) addHouseBtn.addEventListener("click", () => toggleAddModal(true));
-    if (addHouseCancel) addHouseCancel.addEventListener("click", (e) => { e.preventDefault(); toggleAddModal(false); });
+    if (addOrgBtn) addOrgBtn.addEventListener("click", () => toggleAddModal(true));
+    if (addOrgCancel) addOrgCancel.addEventListener("click", (e) => { e.preventDefault(); toggleAddModal(false); });
 
-    if (addHouseForm) {
-        addHouseForm.addEventListener("submit", async (e) => {
+    if (addOrgForm) {
+        addOrgForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-            if (addHouseOutput) { addHouseOutput.textContent = "Saving..."; addHouseOutput.className = "form-output"; }
-
-            const formData = new FormData(addHouseForm);
+            if (addOrgOutput) { addOrgOutput.textContent = "Saving..."; addOrgOutput.className = "form-output"; }
+            const formData = new FormData(addOrgForm);
             try {
-                const res = await fetch(addHouseForm.dataset.endpoint || '/api/staff/houses/create', {
-                    method: 'POST',
+                const res = await fetch(addOrgForm.dataset.endpoint || "/api/staff/organizations/create", {
+                    method: "POST",
                     body: formData,
-                    credentials: 'same-origin'
+                    credentials: "same-origin",
                 });
                 const text = await res.text();
                 let data;
-                try { data = JSON.parse(text || '{}'); } catch { data = { raw: text }; }
-
+                try { data = JSON.parse(text || "{}"); } catch { data = { raw: text }; }
                 if (!res.ok) {
-                    if (addHouseOutput) { addHouseOutput.textContent = data.error || data.raw || ('HTTP ' + res.status); addHouseOutput.className = 'form-output error'; }
+                    if (addOrgOutput) { addOrgOutput.textContent = data.error || data.raw || ("HTTP " + res.status); addOrgOutput.className = "form-output error"; }
                     return;
                 }
-
-                if (addHouseOutput) { addHouseOutput.textContent = 'Created'; addHouseOutput.className = 'form-output success'; }
+                if (addOrgOutput) { addOrgOutput.textContent = "Created"; addOrgOutput.className = "form-output success"; }
                 toggleAddModal(false);
-                if (typeof load === 'function') load();
+                if (typeof load === "function") load();
             } catch {
-                if (addHouseOutput) { addHouseOutput.textContent = 'Network error'; addHouseOutput.className = 'form-output error'; }
+                if (addOrgOutput) { addOrgOutput.textContent = "Network error"; addOrgOutput.className = "form-output error"; }
             }
         });
     }
 
-    if (updateHouseCancel) {
-        updateHouseCancel.addEventListener("click", (e) => { e.preventDefault(); toggleUpdateModal(false); });
+    if (updateOrgCancel) {
+        updateOrgCancel.addEventListener("click", (e) => { e.preventDefault(); toggleUpdateModal(false); });
     }
 
-    if (updateHouseForm) {
-        updateHouseForm.addEventListener("submit", async (e) => {
+    if (updateOrgForm) {
+        updateOrgForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-            if (updateHouseOutput) { updateHouseOutput.textContent = "Saving..."; updateHouseOutput.className = "form-output"; }
+            if (updateOrgOutput) { updateOrgOutput.textContent = "Saving..."; updateOrgOutput.className = "form-output"; }
 
-            const formData = new FormData(updateHouseForm);
+            const id = (updateOrgId && updateOrgId.value.trim()) || "";
+            const nameVal = (updateOrgName && updateOrgName.value.trim()) || "";
+
+            if (!id) {
+                if (updateOrgOutput) { updateOrgOutput.textContent = "Organization ID is empty"; updateOrgOutput.className = "form-output error"; }
+                return;
+            }
+            if (!nameVal) {
+                if (updateOrgOutput) { updateOrgOutput.textContent = "Name is required"; updateOrgOutput.className = "form-output error"; }
+                return;
+            }
+
+            const endpoint = updateOrgForm.dataset.endpoint || "/api/staff/organizations/update";
+            const formData = new FormData();
+            formData.append("organizationID", id);
+            formData.append("name", nameVal);
+
             try {
-                const res = await fetch(updateHouseForm.dataset.endpoint || '/api/staff/users/resident/update-house', {
-                    method: 'POST',
+                const res = await fetch(endpoint, {
+                    method: "POST",
                     body: formData,
-                    credentials: 'same-origin'
+                    credentials: "same-origin",
                 });
                 const text = await res.text();
                 let data;
-                try { data = JSON.parse(text || '{}'); } catch { data = { raw: text }; }
+                try { data = JSON.parse(text || "{}"); } catch { data = { raw: text }; }
 
                 if (!res.ok) {
-                    if (updateHouseOutput) { updateHouseOutput.textContent = data.error || data.raw || ('HTTP ' + res.status); updateHouseOutput.className = 'form-output error'; }
+                    if (updateOrgOutput) { updateOrgOutput.textContent = data.error || data.raw || ("HTTP " + res.status); updateOrgOutput.className = "form-output error"; }
                     return;
                 }
 
-                if (updateHouseOutput) { updateHouseOutput.textContent = 'Updated'; updateHouseOutput.className = 'form-output success'; }
+                if (updateOrgOutput) { updateOrgOutput.textContent = "Updated"; updateOrgOutput.className = "form-output success"; }
                 toggleUpdateModal(false);
-                if (typeof load === 'function') load();
+                if (typeof load === "function") load();
             } catch {
-                if (updateHouseOutput) { updateHouseOutput.textContent = 'Network error'; updateHouseOutput.className = 'form-output error'; }
+                if (updateOrgOutput) { updateOrgOutput.textContent = "Network error"; updateOrgOutput.className = "form-output error"; }
             }
         });
     }
 
     const buildUrl = () => {
-        const url = new URL('/api/staff/houses/list', window.location.origin);
-        url.searchParams.set('page', String(page));
-        url.searchParams.set('limit', String(limit));
+        const url = new URL("/api/staff/organizations/list", window.location.origin);
+        url.searchParams.set("page", String(page));
+        url.searchParams.set("limit", String(limit));
         const pattern = patternInput && patternInput.value.trim();
-        if (pattern) url.searchParams.set('pattern', pattern);
+        if (pattern) url.searchParams.set("pattern", pattern);
         return url.toString();
     };
 
@@ -159,30 +172,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const render = (data) => {
         clear();
-        const houses = data.houses || [];
+        const orgs = data.organizations || [];
 
         const meta = data.meta || {};
-        if (typeof meta.page === 'number') page = meta.page;
-        if (typeof meta.pages === 'number') lastPages = meta.pages;
-        else if (typeof data.total === 'number') {
-            lastPages = Math.max(1, Math.ceil(data.total / limit));
-        }
+        if (typeof meta.page === "number") page = meta.page;
+        if (typeof meta.pages === "number") lastPages = meta.pages;
+        else if (typeof data.total === "number") lastPages = Math.max(1, Math.ceil(data.total / limit));
 
         if (totalCountEl) {
-            const total = (typeof meta.total === 'number') ? meta.total : (data.total || 0);
+            const total = (typeof meta.total === "number") ? meta.total : (data.total || 0);
             totalCountEl.textContent = String(total);
         }
 
         updateControls();
 
-        if (!houses.length) {
-            if (out) out.textContent = "No houses found";
+        if (!orgs.length) {
+            if (out) out.textContent = "No organizations found";
             return;
         }
 
-        houses.forEach(h => {
-            const idText = (h.ID !== undefined && h.ID !== null) ? String(h.ID) : '';
-            const addressText = h.Address || '';
+        orgs.forEach(o => {
+            const idText = (o.ID !== undefined && o.ID !== null) ? String(o.ID) : "";
+            const nameText = o.Name || "";
 
             const card = document.createElement("div");
             card.className = "card";
@@ -196,9 +207,8 @@ document.addEventListener("DOMContentLoaded", () => {
             idLabel.style.color = "var(--muted)";
             idLabel.textContent = "ID: ";
             const idValue = document.createElement("span");
-            idValue.className = "house-id";
+            idValue.className = "org-id";
             idValue.textContent = idText;
-
             idRow.appendChild(idLabel);
             idRow.appendChild(idValue);
 
@@ -210,7 +220,6 @@ document.addEventListener("DOMContentLoaded", () => {
             copyBtn.type = "button";
             copyBtn.title = "Copy ID";
             copyBtn.textContent = "Copy";
-
             copyBtn.addEventListener("click", async () => {
                 const prevText = copyBtn.textContent;
                 copyBtn.disabled = true;
@@ -230,37 +239,35 @@ document.addEventListener("DOMContentLoaded", () => {
                     }, 1200);
                 }
             });
-
             idRow.appendChild(copyBtn);
 
-            const addrRow = document.createElement("div");
-            const addrLabel = document.createElement("span");
-            addrLabel.style.color = "var(--muted)";
-            addrLabel.textContent = "Address: ";
-            const addrValue = document.createElement("span");
-            addrValue.textContent = addressText;
-
-            addrRow.appendChild(addrLabel);
-            addrRow.appendChild(addrValue);
+            const nameRow = document.createElement("div");
+            const nameLabel = document.createElement("span");
+            nameLabel.style.color = "var(--muted)";
+            nameLabel.textContent = "Name: ";
+            const nameValue = document.createElement("span");
+            nameValue.textContent = nameText;
+            nameRow.appendChild(nameLabel);
+            nameRow.appendChild(nameValue);
 
             info.appendChild(idRow);
             info.appendChild(document.createElement("br"));
-            info.appendChild(addrRow);
+            info.appendChild(nameRow);
 
             const actions = document.createElement("div");
             actions.className = "form-row";
             actions.style.marginTop = "8px";
+
             const editBtn = document.createElement("button");
             editBtn.className = "btn";
             editBtn.type = "button";
-            editBtn.textContent = "Edit address";
+            editBtn.textContent = "Edit name";
             editBtn.addEventListener("click", () => {
-                if (updateHouseId) updateHouseId.value = idText;
-                if (updateHouseAddress) updateHouseAddress.value = addressText;
-                if (updateHouseOutput) { updateHouseOutput.textContent = ""; updateHouseOutput.className = "form-output"; }
+                if (updateOrgId) updateOrgId.value = idText;
+                if (updateOrgName) updateOrgName.value = nameText;
+                if (updateOrgOutput) { updateOrgOutput.textContent = ""; updateOrgOutput.className = "form-output"; }
                 toggleUpdateModal(true);
             });
-
             actions.appendChild(editBtn);
 
             card.appendChild(info);
@@ -272,11 +279,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const load = () => {
         clear();
         if (out) { out.textContent = "Loading..."; out.className = "form-output"; }
-        fetch(buildUrl(), { credentials: 'same-origin' })
+        fetch(buildUrl(), { credentials: "same-origin" })
             .then(async res => {
                 const text = await res.text();
                 try {
-                    const json = JSON.parse(text || '{}');
+                    const json = JSON.parse(text || "{}");
                     if (!res.ok) return Promise.reject(json);
                     return json;
                 } catch {
@@ -296,17 +303,12 @@ document.addEventListener("DOMContentLoaded", () => {
             });
     };
 
-    if (prevBtn) prevBtn.addEventListener('click', () => {
-        if (page > 1) { page--; load(); }
-    });
-    if (nextBtn) nextBtn.addEventListener('click', () => {
-        if (page < lastPages) { page++; load(); }
-    });
-
-    if (applyBtn) applyBtn.addEventListener('click', () => { page = 1; load(); });
-    if (refreshBtn) refreshBtn.addEventListener('click', () => load());
-    if (limitSelect) limitSelect.addEventListener('change', (e) => {
-        const v = parseInt(e.target.value || '10', 10);
+    if (prevBtn) prevBtn.addEventListener("click", () => { if (page > 1) { page--; load(); } });
+    if (nextBtn) nextBtn.addEventListener("click", () => { if (page < lastPages) { page++; load(); } });
+    if (applyBtn) applyBtn.addEventListener("click", () => { page = 1; load(); });
+    if (refreshBtn) refreshBtn.addEventListener("click", () => load());
+    if (limitSelect) limitSelect.addEventListener("change", (e) => {
+        const v = parseInt(e.target.value || "10", 10);
         if (!isNaN(v) && v > 0) { limit = v; page = 1; load(); }
     });
 

@@ -3,7 +3,9 @@ package utils
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"strconv"
 
+	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -47,4 +49,22 @@ func IsNumbersAndLetters(s string) bool {
 		}
 	}
 	return true
+}
+
+func GetPageAndLimitFromContext(c *gin.Context) (int, int) {
+	page := 1
+	limit := 10
+
+	if p := c.Query("page"); p != "" {
+		if v, err := strconv.Atoi(p); err == nil && v > 0 {
+			page = v
+		}
+	}
+	if l := c.Query("limit"); l != "" {
+		if v, err := strconv.Atoi(l); err == nil && v > 0 && v <= 1000 {
+			limit = v
+		}
+	}
+
+	return page, limit
 }

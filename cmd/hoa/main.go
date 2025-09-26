@@ -1,10 +1,10 @@
 package main
 
 import (
+	"DBPrototyping/pkg/company"
 	"DBPrototyping/pkg/handlers"
 	"DBPrototyping/pkg/requests"
 	"DBPrototyping/pkg/residence"
-	"DBPrototyping/pkg/staffdata"
 	"DBPrototyping/pkg/userdata"
 	"DBPrototyping/pkg/userdata/session"
 	"fmt"
@@ -53,9 +53,9 @@ func main() {
 		&residence.ResidentPg{},
 		&residence.HousePg{},
 		&residence.ResidentHousePg{},
-		&staffdata.StaffMemberPg{},
-		&staffdata.SpecializationPg{},
-		&staffdata.StaffMemberSpecializationPg{},
+		&company.StaffMemberPg{},
+		&company.SpecializationPg{},
+		&company.StaffMemberSpecializationPg{},
 		&requests.RequestPg{},
 		&userdata.UserPg{},
 	); errAuto != nil {
@@ -79,7 +79,7 @@ func main() {
 
 	userRepo := userdata.NewUserRepoPg(db, logger)
 	residentsRepo := residence.NewResidentPgRepo(logger, db)
-	staffRepo := staffdata.NewStaffRepoPostgres(logger, db)
+	staffRepo := company.NewStaffRepoPostgres(logger, db)
 	reqRepo := requests.NewRequestPgRepo(logger, db)
 
 	userHandler := handlers.UserHandler{
@@ -152,6 +152,11 @@ func main() {
 	staffApiGroup.GET("/users/staff/info", staffHandler.GetSpecializationsForStaffMember())
 	staffApiGroup.GET("/users/staff/delete-spec", staffHandler.DeactivateSpecialization())
 	staffApiGroup.POST("/users/staff/add-specialization", staffHandler.AddStaffSpecialization())
+
+	staffApiGroup.GET("/organizations/list", staffHandler.GetOrganizations())
+	staffApiGroup.POST("/organizations/create", staffHandler.CreateOrganization())
+	staffApiGroup.POST("/organizations/update", staffHandler.UpdateOrganizationName())
+	staffGroup.GET("/organizations/panel", pageHandler.OrganizationsPage())
 
 	staffApiGroup.GET("/specializations/list", staffHandler.GetAllSpecs())
 	staffApiGroup.POST("/specializations/create", staffHandler.CreateSpecialization())

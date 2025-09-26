@@ -177,7 +177,7 @@ input:focus, select:focus, textarea:focus {
     z-index: 9999;
 }
 
-#user-modal, #create-modal, #update-house-modal {
+#user-modal, #create-modal, #update-house-modal, #add-org-modal, #update-org-modal {
     background: var(--card);
     border: 1px solid var(--border);
     box-shadow: 0 20px 40px rgba(0,0,0,0.6);
