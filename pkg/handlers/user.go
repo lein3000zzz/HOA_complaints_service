@@ -190,8 +190,8 @@ func (h *UserHandler) Login() func(c *gin.Context) {
 			}
 		}
 
-		responseJSON["error"] = finalErr.Error()
 		responseJSON["message"] = userToLogin.Phone
+		c.JSON(http.StatusOK, responseJSON)
 		return
 	}
 }

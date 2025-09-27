@@ -195,7 +195,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
                 try {
                     const url = '/api/staff/users/resident/get-number?residentID=' + encodeURIComponent(residentID);
-                    const res = await fetch(url, { method: 'POST', credentials: 'same-origin' });
+                    const res = await fetch(url, { method: 'GET', credentials: 'same-origin' });
                     const text = await res.text();
                     let data;
                     try { data = JSON.parse(text || '{}'); } catch { data = { raw: text }; }
