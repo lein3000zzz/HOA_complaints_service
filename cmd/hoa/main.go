@@ -139,18 +139,18 @@ func main() {
 	staffGroup.GET("/admin-panel", pageHandler.AdminPage())
 
 	staffApiGroup.GET("/users/list", userHandler.GetAllUsersFiltered())
-	staffApiGroup.GET("/users/delete/:phoneNumber", userHandler.DeleteUser())
+	staffApiGroup.DELETE("/users/delete/:phoneNumber", userHandler.DeleteUser())
 
 	staffApiGroup.GET("/users/info/:phoneNumber", userHandler.GetUserDetails())
 
 	staffApiGroup.GET("/users/resident/info", resHandler.GetHousesForResident())
-	staffApiGroup.GET("/users/resident/remove-house", resHandler.DeleteHouseForResident())
+	staffApiGroup.DELETE("/users/resident/remove-house", resHandler.DeleteHouseForResident())
 	staffApiGroup.POST("/users/resident/add-house", resHandler.AddResidentHouse())
 	staffApiGroup.POST("/users/resident/update-house", resHandler.UpdateHouseAddress())
 	staffApiGroup.GET("/users/resident/get-number", resHandler.GetResidentPhoneNumberByID())
 
 	staffApiGroup.GET("/users/staff/info", staffHandler.GetSpecializationsForStaffMember())
-	staffApiGroup.GET("/users/staff/delete-spec", staffHandler.DeactivateSpecialization())
+	staffApiGroup.DELETE("/users/staff/delete-spec", staffHandler.DeactivateSpecialization())
 	staffApiGroup.POST("/users/staff/add-specialization", staffHandler.AddStaffSpecialization())
 
 	staffApiGroup.GET("/organizations/list", staffHandler.GetOrganizations())
@@ -169,7 +169,7 @@ func main() {
 	staffApiGroup.GET("/requests/panel", reqHandler.GetRequestsForAdmin())
 	staffApiGroup.POST("/requests/panel/update", reqHandler.UpdateRequest())
 	staffApiGroup.GET("/requests/panel/update/random-assign", staffHandler.GetLeastBusyByJobID())
-	staffApiGroup.GET("/requests/panel/delete/:id", reqHandler.DeleteRequest())
+	staffApiGroup.DELETE("/requests/panel/delete/:id", reqHandler.DeleteRequest())
 
 	staffGroup.GET("/requests/panel", pageHandler.AdminRequestsPage())
 	staffGroup.GET("/users/panel", pageHandler.UsersManagerPage())

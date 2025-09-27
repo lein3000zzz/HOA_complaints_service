@@ -112,7 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
             delBtn.addEventListener('click', async () => {
                 if (!confirm('Delete user ' + phone + '?')) return;
                 try {
-                    const res = await fetch('/api/staff/users/delete/' + encodeURIComponent(phone), { method: 'GET', credentials: 'same-origin' });
+                    const res = await fetch('/api/staff/users/delete/' + encodeURIComponent(phone), { method: 'DELETE', credentials: 'same-origin' });
                     const text = await res.text();
                     let json;
                     try { json = JSON.parse(text || '{}'); } catch { json = { raw: text }; }
@@ -259,7 +259,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (!confirm('Remove house ' + (h.ID || h.id) + ' from resident?')) return;
                 try {
                     const url = '/api/staff/users/resident/remove-house?residentID=' + encodeURIComponent(resIdEl.textContent) + '&houseID=' + encodeURIComponent(h.ID || h.id);
-                    const r = await fetch(url, { method: 'GET', credentials: 'same-origin' });
+                    const r = await fetch(url, { method: 'DELETE', credentials: 'same-origin' });
                     const jd = await r.json();
                     if (!r.ok) { alert(jd.error || 'Remove failed'); return; }
                     btnGetHouses.click();
@@ -296,7 +296,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (!confirm('Deactivate specialization ' + (s.ID || s.id) + '?')) return;
                 try {
                     const url = '/api/staff/users/staff/delete-spec?staffMemberID=' + encodeURIComponent(staffIdEl.textContent) + '&jobID=' + encodeURIComponent(s.ID || s.id);
-                    const r = await fetch(url, { method: 'GET', credentials: 'same-origin' });
+                    const r = await fetch(url, { method: 'DELETE', credentials: 'same-origin' });
                     const jd = await r.json();
                     if (!r.ok) { alert(jd.error || 'Deactivate failed'); return; }
                     btnGetSpecs.click();

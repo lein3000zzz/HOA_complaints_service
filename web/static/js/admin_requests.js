@@ -220,7 +220,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (!confirm('Delete request ' + id + '?')) return;
                 try {
                     const res = await fetch('/api/staff/requests/panel/delete/' + encodeURIComponent(id), {
-                        method: 'GET',
+                        method: 'DELETE',
                         credentials: 'same-origin'
                     });
                     const text = await res.text();
